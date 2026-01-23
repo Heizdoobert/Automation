@@ -1,7 +1,7 @@
 import time
 import functools
+import json
 
-from pathlib import Path
 from airtest.core.api import *
 from airtest.aircv import *
 from airtest.report.report import *
@@ -112,8 +112,30 @@ def launch_app_wait_load_done(package_name, splash_screen_icon):
         assert False, "Game load too long!"
     if not wait_not_exists(splash_screen_icon, interval=1):
         assert False, "Game load too long!"
-        
-        
+
+def is_text_present(text_value, area=None):
+    cropped = screen = G.DEVICE.snapshot()
+    if area:
+        cropped = aircv.crop_image(screen, area)
+    texts = find_all_text(cropped)
+    return text_value in texts
+
+def find_all_text(screen):
+    from google import genai
+    import PIL.Image
+    aircv.imwrite(r"screen.png", screen, ST.SNAPSHOT_QUALITY, max_size=ST.IMAGE_MAXSIZE)
+    client = genai.Client(api_key="AIzaSyAwvEvWTnPjQI1GpHUG9y8gVGK2N1MEpkY")
+    image = PIL.Image.open("screen.png")
+    try:
+        response = client.models.generate_content(model="gemini-2.5-flash", contents=[image, 
+                                                        "Extract all the text from this image exactly as it appears."
+                                                        "Return the texts as plain json list `[\"text1\", \"text2\", ...]`"])
+        result_text = response.text.replace('`', '').replace("json","").strip()
+        arr = json.loads(result_text)
+        return arr
+    except Exception as e:
+        print(e)
+
 def default_img_setup(img):
     if isinstance(img, Template):
         img.rgb = True
@@ -131,6 +153,9 @@ def log_info(msg, snapshot=True):
 def log_error(msg, snapshot=True):
     log(RuntimeError(msg), snapshot)
 
+def export_log(file_path, report_path):
+    LogToHtml(script_root=file_path, export_dir=report_path, lang='en', plugins=None).report()
+
 def teststep(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
@@ -142,4 +167,5 @@ def teststep(f):
 
     
     
+
 

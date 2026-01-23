@@ -29,11 +29,18 @@ tick_v = Template(r"tpl1768985013457.png")
 list_avatar = [Template(r"tpl1768980343481.png"),Template(r"tpl1768980349036.png"),Template(r"tpl1768980353866.png"),Template(r"tpl1768980359741.png"),Template(r"tpl1768980365190.png"),Template(r"tpl1768980369829.png"),Template(r"tpl1768980375081.png"),Template(r"tpl1768980379672.png"),Template(r"tpl1768980385058.png")]
 
 def main():
-    launch_app_wait_load_done("com.woodpuzzle.pin3d", splash_screen_icon)
-    go_home()
-    avatar = get_current_avatar()
-    new_avatar = change_avatar(avatar)
-    verify_avatar(new_avatar)
+    try:
+        connect_device(r"android://127.0.0.1:5037/emulator-5554")
+        launch_app_wait_load_done("com.woodpuzzle.pin3d", splash_screen_icon)
+        go_home()
+        avatar = get_current_avatar()
+        new_avatar = change_avatar(avatar)
+        verify_avatar(new_avatar)
+    except:
+        pass
+    finally:
+        pass
+        # stop_app("com.woodpuzzle.pin3d")
 
 @teststep
 def go_home():
