@@ -3,6 +3,10 @@ import time
 import functools
 import json
 import shutil
+import atexit
+from pathlib import Path
+import argparse
+import sys
 
 from airtest.core.api import *
 from airtest.aircv import *
@@ -10,19 +14,64 @@ from airtest.report.report import *
 
 # off airtest console logging
 import logging
+
 logger = logging.getLogger("airtest")
 logger.setLevel(logging.ERROR)
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-report_dir= os.path.join(current_dir, "Reports")
-log_dir= os.path.join(current_dir, "Logs", __main__.__file__.replace(".py", "").split("\\")[-1])
-if os.path.exists(log_dir):
-    shutil.rmtree(log_dir)
-else:
-    os.makedirs(log_dir, exist_ok=True)
-
+# directory setup
 error_count = 0
+main_file = getattr(sys.modules.get("__main__"), "__file__", None)
 
+# parse command line arguments
+parser = argparse.ArgumentParser(description="Run exporter")
+parser.add_argument("--report", type=Path, help="Path to export folder", required=False)
+parser.add_argument(
+    "--device",
+    type=str,
+    help="Target device (ex: `android://127.0.0.1:5037/emulator-5556`)",
+    required=False,
+)
+args = parser.parse_args()
+report_path: Path = args.report
+device_to_connet: str = args.device
+
+# report setup
+if report_path and main_file:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    log_dir = os.path.join(current_dir, "Logs", Path(main_file).name.replace(".py", ""))
+    if os.path.exists(log_dir):
+        shutil.rmtree(log_dir)
+    else:
+        os.makedirs(log_dir, exist_ok=True)
+    auto_setup(main_file, logdir=log_dir)
+
+    # register at_exit function to export log when script ends
+    def at_exit():
+        print(f"Exporting log to {report_path} from {log_dir}")
+        try:
+            LogToHtml(
+                script_root=main_file,
+                export_dir=report_path,
+                log_root=log_dir,
+                lang="en",
+            ).report()
+        except Exception as e:
+            print(f"Failed to export log: {e}")
+
+    atexit.register(at_exit)
+
+
+# connect device if specified
+if device_to_connet:
+    print("Connecting device:", device_to_connet)
+    try:
+        connect_device(device_to_connet)
+    except Exception as e:
+        print(f"Failed to connect device: {e}")
+        sys.exit(1)
+
+
+# wrapped functions from airtest
 @logwrap
 def wait_not_exists(img, timeout=30, interval=0.5, area=None, snapshot=True):
     img = default_img_setup(img)
@@ -32,6 +81,7 @@ def wait_not_exists(img, timeout=30, interval=0.5, area=None, snapshot=True):
             return False
         sleep(interval)
     return True
+
 
 @logwrap
 def wait_exists(img, timeout=30, interval=0.1, area=None, snapshot=True):
@@ -45,6 +95,7 @@ def wait_exists(img, timeout=30, interval=0.1, area=None, snapshot=True):
         result = partial_search(img, area)
     return result
 
+
 @logwrap
 def partial_search(img, area=None):
     img = default_img_setup(img)
@@ -53,6 +104,7 @@ def partial_search(img, area=None):
         local_screen = aircv.crop_image(screen, area)
         return img.match_in(local_screen)
     return img.match_in(screen)
+
 
 @logwrap
 def try_touch_and_wait(img_or_pos, wait_time=2, area=None):
@@ -64,6 +116,7 @@ def try_touch_and_wait(img_or_pos, wait_time=2, area=None):
         return True
     return False
 
+
 @logwrap
 def try_touch_and_hold(img_or_pos, hold_time=2, area=None):
     img_or_pos = default_img_setup(img_or_pos)
@@ -74,87 +127,106 @@ def try_touch_and_hold(img_or_pos, hold_time=2, area=None):
         return True
     return False
 
+
 @logwrap
 def zoom_in(center=None):
     pinch("in", center)
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def zoom_out(center=None):
     pinch("out", center)
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def swipe_up(start=None):
     if not start:
         start = (0.5, 0.5)
     swipe(start, [0, -1])
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def swipe_down(start=None):
     if not start:
         start = (0.5, 0.5)
     swipe(start, [0, 1])
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def swipe_left(start=None):
     if not start:
         start = (0.5, 0.5)
     swipe(start, [0, -1])
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def swipe_right(start=None):
     if not start:
         start = (0.5, 0.5)
     swipe(start, [0, 1])
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def swipe_from_to(start, end):
     swipe(start, end)
     sleep(1)
-    
-@logwrap    
+
+
+@logwrap
 def restart_app(package_name):
     stop_app(package_name)
     sleep(3)
     start_app(package_name)
 
-@logwrap    
+
+@logwrap
 def launch_app_wait_load_done(package_name, splash_screen_icon):
     restart_app(package_name)
     if not wait_exists(splash_screen_icon, interval=1):
-        assert False, "Game load too long!"
+        log_error("Game load too long!")
     if not wait_not_exists(splash_screen_icon, interval=1):
-        assert False, "Game load too long!"
+        log_error("Game load too long!")
 
+
+# utilites for text recognition
 def is_text_present(text_value, area=None):
     screen = G.DEVICE.snapshot()
     if area:
         cropped = aircv.crop_image(screen, area)
         texts = find_all_text(cropped)
     else:
-        texts = find_all_text(screen)       
+        texts = find_all_text(screen)
     return text_value in texts
+
 
 def find_all_text(screen):
     from google import genai
     import PIL.Image
+
     aircv.imwrite(r"screen.png", screen, ST.SNAPSHOT_QUALITY, max_size=ST.IMAGE_MAXSIZE)
     client = genai.Client(api_key="AIzaSyAwvEvWTnPjQI1GpHUG9y8gVGK2N1MEpkY")
     image = PIL.Image.open("screen.png")
     try:
-        response = client.models.generate_content(model="gemini-2.5-flash", contents=[image, 
-                                                        "Extract all the text from this image exactly as it appears."
-                                                        "Return the texts as plain json list `[\"text1\", \"text2\", ...]`"])
-        result_text = response.text.replace('`', '').replace("json","").strip()
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                image,
+                "Extract all the text from this image exactly as it appears."
+                'Return the texts as plain json list `["text1", "text2", ...]`',
+            ],
+        )
+        result_text = response.text.replace("`", "").replace("json", "").strip()
         arr = json.loads(result_text)
         return arr
     except Exception as e:
         print(e)
+
 
 def default_img_setup(img):
     if isinstance(img, Template):
@@ -167,19 +239,17 @@ def default_img_setup(img):
         img.scale_step = 0.001
     return img
 
+
 def log_info(msg, snapshot=True):
     log(msg, snapshot=snapshot)
-    
+
+
 def log_error(msg, terminate=False, snapshot=True):
     error_count += 1
+    log(RuntimeError(msg), snapshot=snapshot)
     if terminate:
-        assert False, msg
-    else:
-        log(RuntimeError(msg), snapshot=snapshot)
+        sys.exit(error_count)
 
-def export_log(file_path):
-    print(f"Exporting log to {report_dir} from {log_dir}")
-    LogToHtml(script_root=file_path, export_dir=report_dir, log_root=log_dir, lang='en', plugins=None).report()
 
 def teststep(f):
     @functools.wraps(f)
@@ -188,9 +258,5 @@ def teststep(f):
         res = f(*args, **kwargs)
         log_info(f"------End - {f.__name__}------")
         return res
+
     return wrapper
-
-    
-    
-
-
