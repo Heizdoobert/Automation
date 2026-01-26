@@ -1,22 +1,14 @@
 # -*- encoding=utf8 -*-
 __author__ = "Sullivan"
-import logging
 import random
 import string
 import sys
-
-from airtest.core.api import *
-from airtest.aircv import *
-from airtest.report.report import *
-from pathlib import *
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixonwrapper import *
 
-logger = logging.getLogger("airtest")
-logger.setLevel(logging.ERROR)
-
-auto_setup(__file__, )
+auto_setup(__file__, logdir=log_dir)
 
 splash_screen_icon = Template(r"splash_icon.png")
 home_play_button = Template(r"tpl1768970459486.png")
@@ -32,18 +24,20 @@ name_corner = Template(r"tpl1769067500585.png")
 
 def main():
     try:
-        connect_device(r"android://127.0.0.1:5037/emulator-5554")
+        init_device("Android")
+        # connect_device(r"android://127.0.0.1:5037/emulator-5554")
         launch_app_wait_load_done("com.woodpuzzle.pin3d", splash_screen_icon)
         go_home()
         
         name = change_name()
         check_name(name)
-        # export_log(__file__, r"C:\Users\Sullivan\Documents\AirTestProjects\Reports")
     except:    
         pass
     finally:
-        pass
-        # stop_app("com.woodpuzzle.pin3d")
+        stop_app("com.woodpuzzle.pin3d")
+        export_log(__file__)
+        if error_count > 0:
+            assert False, f"Test completed with {error_count} errors!"
 
 @teststep
 def go_home():
@@ -75,14 +69,5 @@ def check_name(name):
         log_error("Change name verify fail!")
     else:
         print("Change name verify success!")
-    # try_touch_and_wait(profile_corner)
-    # try_touch_and_wait(edit_button)
-    # try_touch_and_wait(edit_button)
-    # try_touch_and_wait(name_corner)
-    # keyevent("KEYCODE_COPY")
-    # sleep(1)
-    # text = get_clipboard()
-    # if name != text:
-    #     log_error("Change name verify fail!")
     
 main()

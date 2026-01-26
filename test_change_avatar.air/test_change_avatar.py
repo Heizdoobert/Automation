@@ -1,22 +1,13 @@
 # -*- encoding=utf8 -*-
 __author__ = "Sullivan"
-import logging
 import random
 import sys
-
-from airtest.core.api import *
-from airtest.aircv import *
-from airtest.report.report import *
-from pathlib import *
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixonwrapper import *
 
-logger = logging.getLogger("airtest")
-logger.setLevel(logging.ERROR)
-
-auto_setup(__file__)
-
+auto_setup(__file__, logdir=log_dir)
 
 splash_screen_icon = Template(r"splash_icon.png")
 home_play_button = Template(r"tpl1768970459486.png")
@@ -26,11 +17,20 @@ close_button = Template(r"tpl1768971072303.png")
 save_button = Template(r"tpl1768984965560.png")
 edit_button = Template(r"tpl1768984937403.png")
 tick_v = Template(r"tpl1768985013457.png")
-list_avatar = [Template(r"tpl1768980343481.png"),Template(r"tpl1768980349036.png"),Template(r"tpl1768980353866.png"),Template(r"tpl1768980359741.png"),Template(r"tpl1768980365190.png"),Template(r"tpl1768980369829.png"),Template(r"tpl1768980375081.png"),Template(r"tpl1768980379672.png"),Template(r"tpl1768980385058.png")]
+list_avatar = [Template(r"tpl1768980343481.png"),
+               Template(r"tpl1768980349036.png"),
+               Template(r"tpl1768980353866.png"),
+               Template(r"tpl1768980359741.png"),
+               Template(r"tpl1768980365190.png"),
+               Template(r"tpl1768980369829.png"),
+               Template(r"tpl1768980375081.png"),
+               Template(r"tpl1768980379672.png"),
+               Template(r"tpl1768980385058.png")]
 
 def main():
     try:
-        connect_device(r"android://127.0.0.1:5037/emulator-5554")
+        init_device("Android")
+        # connect_device(r"android://127.0.0.1:5037/emulator-5556")
         launch_app_wait_load_done("com.woodpuzzle.pin3d", splash_screen_icon)
         go_home()
         avatar = get_current_avatar()
@@ -39,8 +39,10 @@ def main():
     except:
         pass
     finally:
-        pass
-        # stop_app("com.woodpuzzle.pin3d")
+        stop_app("com.woodpuzzle.pin3d")
+        export_log(__file__)
+        if error_count > 0:
+            assert False, f"Test completed with {error_count} errors!"
 
 @teststep
 def go_home():
@@ -58,8 +60,7 @@ def get_current_avatar():
         if av.match_in(local_screen):
             print(f"Current avatar: {av}")
             return av
-        
-    assert False, "Can't detect current avatar!"
+    log_error("Cannot find current avatar!", True)
 
 @teststep     
 def change_avatar(curent_avatar):
@@ -86,9 +87,6 @@ def verify_avatar(img):
     try_touch_and_wait(edit_button)
     if not wait_exists(img, 5, area=(400,320,660,580)):
         log_error("Verify avatar fail in profile editing screen")
-        
-    try_touch_and_wait(close_button)
-    try_touch_and_wait(close_button)
 
 main()
 

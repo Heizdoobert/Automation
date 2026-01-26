@@ -1,10 +1,27 @@
+import __main__
 import time
 import functools
 import json
+import shutil
 
 from airtest.core.api import *
 from airtest.aircv import *
 from airtest.report.report import *
+
+# off airtest console logging
+import logging
+logger = logging.getLogger("airtest")
+logger.setLevel(logging.ERROR)
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+report_dir= os.path.join(current_dir, "Reports")
+log_dir= os.path.join(current_dir, "Logs", __main__.__file__.replace(".py", "").split("\\")[-1])
+if os.path.exists(log_dir):
+    shutil.rmtree(log_dir)
+else:
+    os.makedirs(log_dir, exist_ok=True)
+
+error_count = 0
 
 @logwrap
 def wait_not_exists(img, timeout=30, interval=0.5, area=None, snapshot=True):
@@ -31,10 +48,11 @@ def wait_exists(img, timeout=30, interval=0.1, area=None, snapshot=True):
 @logwrap
 def partial_search(img, area=None):
     img = default_img_setup(img)
-    local_screen = screen = G.DEVICE.snapshot()
+    screen = G.DEVICE.snapshot()
     if area:
         local_screen = aircv.crop_image(screen, area)
-    return img.match_in(local_screen)
+        return img.match_in(local_screen)
+    return img.match_in(screen)
 
 @logwrap
 def try_touch_and_wait(img_or_pos, wait_time=2, area=None):
@@ -114,10 +132,12 @@ def launch_app_wait_load_done(package_name, splash_screen_icon):
         assert False, "Game load too long!"
 
 def is_text_present(text_value, area=None):
-    cropped = screen = G.DEVICE.snapshot()
+    screen = G.DEVICE.snapshot()
     if area:
         cropped = aircv.crop_image(screen, area)
-    texts = find_all_text(cropped)
+        texts = find_all_text(cropped)
+    else:
+        texts = find_all_text(screen)       
     return text_value in texts
 
 def find_all_text(screen):
@@ -148,20 +168,25 @@ def default_img_setup(img):
     return img
 
 def log_info(msg, snapshot=True):
-    log(msg, snapshot)
+    log(msg, snapshot=snapshot)
     
-def log_error(msg, snapshot=True):
-    log(RuntimeError(msg), snapshot)
+def log_error(msg, terminate=False, snapshot=True):
+    error_count += 1
+    if terminate:
+        assert False, msg
+    else:
+        log(RuntimeError(msg), snapshot=snapshot)
 
-def export_log(file_path, report_path):
-    LogToHtml(script_root=file_path, export_dir=report_path, lang='en', plugins=None).report()
+def export_log(file_path):
+    print(f"Exporting log to {report_dir} from {log_dir}")
+    LogToHtml(script_root=file_path, export_dir=report_dir, log_root=log_dir, lang='en', plugins=None).report()
 
 def teststep(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        log_info(f"------{f.__name__} Begin------")
+        log_info(f"------ Begin - {f.__name__}------")
         res = f(*args, **kwargs)
-        log_info(f"------{f.__name__} End------")
+        log_info(f"------End - {f.__name__}------")
         return res
     return wrapper
 
