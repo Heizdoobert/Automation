@@ -11,7 +11,7 @@ class ScrcpyRecorder:
         output: str | Path,
         device: str | None = None,
         max_size: int = 800,
-        bit_rate: str = "1M",
+        bit_rate: str = "500k",
         stay_awake: bool = True,
         scrcpy_path: str = "scrcpy",
     ):

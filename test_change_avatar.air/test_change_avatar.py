@@ -1,11 +1,9 @@
 # import wrapper modules
 import sys
 from pathlib import Path
-from pixon.pixonwrapper import *
 
-# sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pixon"))
-# from pixonwrapper import *
-# auto_setup(__file__)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from pixon.pixonwrapper import *
 
 # import other modules
 import random
@@ -93,3 +91,8 @@ def main():
         log_error(f"Test failed with exception: {e}")
     finally:
         stop_app("com.woodpuzzle.pin3d")
+
+
+if __name__ == "__main__":
+    main()
+

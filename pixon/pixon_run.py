@@ -51,8 +51,13 @@ if args.device:
         print(f"Failed to connect device {args.device}: {e}")
         sys.exit(1)
 else:
-    print("No device specified, exiting.")
-    sys.exit(1)
+    try:
+        init_device()
+    except Exception as e:
+        print(f"Failed to connect device {args.device}: {e}")
+        sys.exit(1)
+    # print("No device specified, exiting.")
+    # sys.exit(1)
 
 # set up report path
 log_dir = air_path / "log"
