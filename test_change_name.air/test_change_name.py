@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pixonwrapper import *
+auto_setup(__file__)
 
 # import other modules
 import random
@@ -19,7 +20,6 @@ continue_button = Template(r"tpl1769067579970.png")
 edit_button = Template(r"tpl1768984937403.png")
 profile_corner = Template(r"tpl1769067360216.png")
 name_corner = Template(r"tpl1769067500585.png")
-
 
 # define your test steps here
 @teststep
@@ -65,7 +65,7 @@ def main():
         name = change_name()
         check_name(name)
     except:
-        pass
+        log_error(f"Test failed with exception: {e}")
     finally:
         stop_app("com.woodpuzzle.pin3d")
         sys.exit(error_count)

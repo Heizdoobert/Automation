@@ -2,8 +2,9 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pixon"))
 from pixonwrapper import *
+auto_setup(__file__)
 
 # import other modules
 import random
@@ -91,7 +92,3 @@ def main():
         log_error(f"Test failed with exception: {e}")
     finally:
         stop_app("com.woodpuzzle.pin3d")
-        sys.exit(error_count)
-
-if __name__ == "__main__":
-    main()
