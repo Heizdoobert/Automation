@@ -10,8 +10,8 @@ class ScrcpyRecorder:
         self,
         output: str | Path,
         device: str | None = None,
-        max_size: int = 1024,
-        bit_rate: str = "3M",
+        max_size: int = 800,
+        bit_rate: str = "1M",
         stay_awake: bool = True,
         scrcpy_path: str = "scrcpy",
     ):

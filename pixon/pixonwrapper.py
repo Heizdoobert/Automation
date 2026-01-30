@@ -2,17 +2,17 @@ import __main__
 import time
 import functools
 import json
-import sys
+import subprocess
+from pathlib import Path
 
 from airtest.core.api import *
 from airtest.aircv import *
 from airtest.report.report import *
-from airtest.core.android.recorder import *
-from airtest.core.android.adb import *
+
 
 # wrapped functions from airtest
 @logwrap
-def wait_not_exists(img, timeout=30, interval=0.5, area=None, snapshot=True):
+def wait_not_exists(img: Template, timeout=30, interval=0.5, area=None, snapshot=True):
     img = default_img_setup(img)
     start_time = time.time()
     while partial_search(img, area):
@@ -23,7 +23,7 @@ def wait_not_exists(img, timeout=30, interval=0.5, area=None, snapshot=True):
 
 
 @logwrap
-def wait_exists(img, timeout=30, interval=0.1, area=None, snapshot=True):
+def wait_exists(img: Template, timeout=30, interval=0.1, area=None, snapshot=True):
     img = default_img_setup(img)
     start_time = time.time()
     result = partial_search(img, area)
@@ -36,7 +36,7 @@ def wait_exists(img, timeout=30, interval=0.1, area=None, snapshot=True):
 
 
 @logwrap
-def partial_search(img, area=None):
+def partial_search(img: Template, area=None):
     img = default_img_setup(img)
     screen = G.DEVICE.snapshot()
     if area:
@@ -47,23 +47,31 @@ def partial_search(img, area=None):
 
 @logwrap
 def try_touch_and_wait(img_or_pos, wait_time=2, area=None):
-    img_or_pos = default_img_setup(img_or_pos)
-    coord = wait_exists(img_or_pos, 3, area=area)
+    if isinstance(img_or_pos, Template):
+        img_or_pos = default_img_setup(img_or_pos)
+        coord = wait_exists(img_or_pos, 3, area=area)
+    else:
+        coord = img_or_pos
     if coord:
         touch(coord)
         sleep(wait_time)
         return True
+    log_error(f"Fail to touch at {img_or_pos}")
     return False
 
 
 @logwrap
 def try_touch_and_hold(img_or_pos, hold_time=2, area=None):
-    img_or_pos = default_img_setup(img_or_pos)
-    coord = wait_exists(img_or_pos, 3, area=area)
+    if isinstance(img_or_pos, Template):
+        img_or_pos = default_img_setup(img_or_pos)
+        coord = wait_exists(img_or_pos, 3, area=area)
+    else:
+        coord = img_or_pos
     if coord:
         touch(coord, duration=hold_time)
         sleep(1)
         return True
+    log_error(f"Fail to touch at {img_or_pos}")
     return False
 
 
@@ -127,6 +135,10 @@ def restart_app(package_name):
 @logwrap
 def launch_app_wait_load_done(package_name, splash_screen_icon):
     restart_app(package_name)
+    sleep(3)
+    logcat_to_file(
+        package_name, os.path.join(ST.LOG_DIR, f"logcat.log")
+    )
     if not wait_exists(splash_screen_icon, interval=1):
         log_error("Game load too long!")
     if not wait_not_exists(splash_screen_icon, interval=1):
@@ -183,11 +195,43 @@ def log_info(msg, snapshot=True):
     log(msg, snapshot=snapshot)
 
 
-def log_error(msg, terminate=False, snapshot=True):
-    error_count += 1
+def log_error(msg, snapshot=True):
     log(RuntimeError(msg), snapshot=snapshot)
-    if terminate:
-        sys.exit(error_count)
+
+
+def logcat_to_file(
+    package: str,
+    output_file: str | Path,
+    clear=True,
+):
+    from airtest.core.android.adb import ADB
+
+    adb: ADB = G.DEVICE.adb
+    output_file = Path(output_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    if clear:
+        try:
+            adb.cmd("logcat -c")
+        except:
+            pass
+
+    pid_output = adb.cmd(f"shell pidof {package}").strip()
+    if not pid_output:
+        raise RuntimeError(f"Package '{package}' is not running")
+
+    pids = pid_output.split()
+    pid_args = [f"--pid={pid}" for pid in pids]
+
+    cmd = [adb.adb_path] + ["-s", adb.serialno, "logcat"] + pid_args
+
+    print(f"[logcat] writing directly to {output_file}")
+    f = open(output_file, "w", encoding="utf-8")
+    subprocess.Popen(
+        cmd,
+        stdout=f,
+        stderr=subprocess.STDOUT,
+    )
 
 
 def teststep(f):

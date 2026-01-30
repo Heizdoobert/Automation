@@ -1,10 +1,11 @@
 # import wrapper modules
 import sys
 from pathlib import Path
+from pixon.pixonwrapper import *
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pixon"))
-from pixonwrapper import *
-auto_setup(__file__)
+# sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pixon"))
+# from pixonwrapper import *
+# auto_setup(__file__)
 
 # import other modules
 import random

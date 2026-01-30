@@ -6,8 +6,7 @@ import shutil
 
 from datetime import datetime
 from pathlib import Path
-from airtest.core.api import *
-
+from pixon.pixonwrapper import *
 
 # off airtest console logging
 logger = logging.getLogger("airtest")
@@ -57,7 +56,7 @@ else:
 
 # set up report path
 log_dir = air_path / "log"
-shutil.rmtree(log_dir)
+shutil.rmtree(log_dir, ignore_errors=True)
 set_logdir(log_dir)
 report_path = air_path.parent / "Reports"
 if args.report:
@@ -76,7 +75,7 @@ if args.recording:
             report_path.resolve() / "Recordings" / f"{air_name}" / file_name
         )
 
-    from ScrcpyRecorder import ScrcpyRecorder
+    from pixon.ScrcpyRecorder import ScrcpyRecorder
 
     recorder = ScrcpyRecorder(
         output=recording_path,
@@ -88,10 +87,8 @@ if args.recording:
 
 # run the test module
 sys.path.insert(0, str(air_path))
-using(str(air_path))
 module_name = air_path.stem
 test_module = __import__(module_name)
-
 if hasattr(test_module, "main"):
     test_module.main()
 
@@ -109,3 +106,10 @@ if recorder:
     recorder.stop()
     print("Copy recording to report")
     shutil.copy2(recording_path, report_path / f"{air_name.replace('.air', '.log')}")
+
+
+# stop the adb server
+from airtest.core.android.adb import ADB
+
+adb: ADB = G.DEVICE.adb
+adb.kill_server()
