@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.egg-info/
+dist/
+build/
+
+# Airtest
+*.air/log/
+*.air/Reports/
+*.mp4
+
+# IDE
+.vscode/
+.idea/
+
+# Local
+.env
+.mcp.json
+instructions.md
+excel_server.py
+.claude.json
+reports/
+log/
