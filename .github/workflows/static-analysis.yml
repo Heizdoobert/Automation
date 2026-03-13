@@ -1,0 +1,67 @@
+name: Static Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      # Install analysis tools + stubs only — no native Airtest/PaddleOCR libs needed
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint mypy
+          pip install opencv-python pillow numpy
+          pip install types-requests
+
+      # -------------------------------------------------------
+      # Pylint — reads .pylintrc from repo root
+      # continue-on-error so mypy still runs if pylint fails
+      # -------------------------------------------------------
+
+      - name: Run pylint
+        id: pylint
+        continue-on-error: true
+        run: |
+          pylint common/ pages/ pixon/ air_tests/unit/ \
+            --rcfile=.pylintrc \
+            --fail-under=7.0
+
+      # -------------------------------------------------------
+      # Mypy — reads mypy.ini from repo root
+      # continue-on-error so we collect both results before failing
+      # -------------------------------------------------------
+
+      - name: Run mypy
+        id: mypy
+        continue-on-error: true
+        run: |
+          mypy common/ pages/ pixon/ \
+            --config-file=mypy.ini
+
+      # -------------------------------------------------------
+      # Fail job only after both tools have fully run
+      # -------------------------------------------------------
+
+      - name: Check results
+        run: |
+          if [ "${{ steps.pylint.outcome }}" = "failure" ] || \
+             [ "${{ steps.mypy.outcome }}" = "failure" ]; then
+            echo "Static analysis failed. Check pylint and mypy output above."
+            exit 1
+          fi
+          echo "All checks passed."
