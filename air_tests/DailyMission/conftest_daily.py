@@ -18,6 +18,7 @@ LEVEL_WAIT_TIMEOUT = 300
 # ==================== OPEN APP + TURN ON FAKE ADS ====================
 def open_app_with_fake_ads(cheat: CheatPage, home: HomePage, ads: RemoveAds) -> None:
     wrapper.launch_app_wait_load_done(package_name, home.splash_screen_icon)
+    close_all_popups(home)
     cheat.open_cheat()
     ads.fake_ads_on()
     cheat.close_cheat()
@@ -52,7 +53,6 @@ def go_home_clean(home: HomePage, retries: int = 3) -> None:
                 wrapper.log_info("Home screen confirmed")
                 return
         wrapper.log_warning(f"go_home_clean attempt {attempt+1} failed, retrying...")
-        sleep(2)
     assert False, "go_home_clean FAIL: not at home after navigation"
 
 
@@ -133,7 +133,7 @@ def setup_fresh_install(
     game: GamePage,
     setting: SettingPage,
     target_level: int = DEFAULT_TARGET_LEVEL,
-    level_timeout: int = 260,
+    level_timeout: int = 300,
 ) -> None:
     launch_and_reach_pre_level(home, cheat, game)
     close_all_popups(home)
@@ -247,5 +247,7 @@ def execute_mission_action(
         wrapper.log_info("Lucky spin action not yet implemented")
     elif mission_type == "watch_ads":
         wrapper.log_info("Watch ads action not yet implemented")
+    elif mission_type == "play_minutes":
+        wrapper.log_info("Play minutes action not yet implemented")
     else:
         wrapper.log_warning(f"Unknown mission type: {mission_type}")

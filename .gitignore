@@ -34,3 +34,11 @@ file_handler.py
 llm_client.py
 project_knowledge.py
 validator.py
+tools/
+strategy/
+memory/
+knowledge/
+identity/
+environment/
+agents/
+DailyMission.xlsx

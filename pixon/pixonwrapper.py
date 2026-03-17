@@ -267,6 +267,11 @@ def read_level_from_badge(screen_bgr: np.ndarray, bbox):
     crop_rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)  # type: ignore[attr-defined]
     texts = find_all_text(crop_rgb)
     for t in texts:
+        if 'level' in t.lower():
+            m = re.search(r'\d+', t)
+            if m:
+                return int(m.group())
+    for t in texts:
         m = re.search(r'\d+', t)
         if m:
             return int(m.group())

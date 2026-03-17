@@ -14,8 +14,7 @@ from pages.game_page import GamePage
 from pages.daily_mission import DailyMissionPage
 from pages.remove_ads import RemoveAds
 from pages.setting_page import SettingPage
-from air_tests.DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app
-from air_tests.DailyMission.conftest_daily import execute_mission_action
+from air_tests.DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, execute_mission_action, open_app_with_fake_ads
 
 auto_setup(__file__)
 
@@ -30,9 +29,9 @@ setting = SettingPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC06: Notify after completing mission but not claiming ===")
-        setup_unlocked_daily_mission(home_page, cheat, game, ads, setting, target_level=11)
+        setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
         execute_mission_action(game, cheat, "complete_levels", 3)
         sleep(2)

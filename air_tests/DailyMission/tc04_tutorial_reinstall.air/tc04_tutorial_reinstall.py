@@ -1,4 +1,5 @@
 # air_tests/DailyMission/tc04_tutorial_reinstall.air/tc04_tutorial_reinstall.py
+# exception:: must be run after because need reinstall app to check it
 import sys
 import traceback
 from pathlib import Path

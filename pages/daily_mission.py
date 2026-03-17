@@ -11,7 +11,7 @@ class DailyMissionPage(BasePage):
     btn_daily_mission        = get_template("home_page/btn_daily_mission.png",         (-0.397, -0.542))
     tap_to_continue          = get_template("tap_to_continue.png",                     (-0.004,  0.55 ))
     btn_close                = get_template("system_function/btn_close.png",           ( 0.365, -0.858))
-    btn_daily_mission_notify = get_template("home_page/icon_daily_mission_notify.png", (-0.396, -0.543))
+    btn_daily_mission_notify = get_template("home_page/btn_daily_mission_notify.png", (-0.396, -0.543))
     btn_play_daily           = get_template("daily_mission/btn_play_daily.png",        ( 0.261, -0.233))
     btn_collect              = get_template("daily_mission/btn_collect.png",           ( 0.2,    0.1  ))
     exp_milestone_boxes = [
@@ -38,6 +38,8 @@ class DailyMissionPage(BasePage):
             return False
         self.tap(self.btn_daily_mission)
         sleep(2)
+        if self.wait_for_element(self.tap_to_continue, timeout=10):
+            self.tap(self.tap_to_continue)
         return True
 
     def verify_daily_mission_icon_on_home(self) -> bool:
