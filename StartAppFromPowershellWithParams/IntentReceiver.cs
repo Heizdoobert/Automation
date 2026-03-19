@@ -9,10 +9,11 @@ public class IntentReceiver : MonoBehaviour
     }
 
     // Java will automatically call this method and pass the string
-    public void OnReceiveJson(string json)
+    public void OnReceiveJson(string base64String)
     {
-        Debug.Log(">>> INTENT CAUGHT LIVE: json is " + json);
-        
+        byte[] decodedBytes = System.Convert.FromBase64String(base64String);
+        string rawJson = System.Text.Encoding.UTF8.GetString(decodedBytes);
+        Debug.Log(">>> INTENT CAUGHT LIVE: json is " + rawJson);
         // TODO: Update your  game logic here
     }
 }

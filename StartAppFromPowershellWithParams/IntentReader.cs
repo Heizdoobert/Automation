@@ -19,10 +19,12 @@ public class IntentReader : MonoBehaviour
 
                 if (intent != null)
                 {
-                    string json = intent.Call<string>("getStringExtra", "json");
+                    string base64String = intent.Call<string>("getStringExtra", "json");
                     if (!string.IsNullOrEmpty(json))
                     {
-                        Debug.Log(">>> INTENT DATA RECEIVED: json is " + json);
+                        byte[] decodedBytes = System.Convert.FromBase64String(base64String);
+                        string rawJson = System.Text.Encoding.UTF8.GetString(decodedBytes);
+                        Debug.Log(">>> INTENT DATA RECEIVED: json is " + rawJson);
                         
                         // TODO: Apply this data to your game 
                     }
