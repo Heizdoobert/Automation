@@ -1,0 +1,121 @@
+name: Run Airtest Tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      device_id:
+        description: 'Android device/emulator serial (e.g. emulator-5554)'
+        required: false
+        default: 'emulator-5554'
+      test_files:
+        description: >
+          Space-separated .air paths inside the repo to run (e.g.
+          "air_tests/DailyMission/tc01_daily_mission_tutorial_unlock.air
+           air_tests/DailyMission/tc02_daily_mission_icon_not_shown_before_unlock.air").
+          Leave blank to run all tests in air_tests/DailyMission/.
+        required: false
+        default: ''
+
+env:
+  DEVICE_ID: ${{ github.event.inputs.device_id || 'emulator-5554' }}
+  REPORT_DIR: reports
+
+jobs:
+  test:
+    runs-on: self-hosted
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # -------------------------------------------------------
+      # PaddleOCR model pre-download — runs once, cached after
+      # Avoids first-run download delay inside the test session
+      # -------------------------------------------------------
+
+      - name: Pre-download PaddleOCR models
+        run: |
+          python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='en', use_gpu=False, show_log=False)"
+
+      # -------------------------------------------------------
+      # Verify emulator is online before running tests
+      # -------------------------------------------------------
+
+      - name: Wait for emulator to be ready
+        run: |
+          adb start-server
+          echo "Waiting for device ${{ env.DEVICE_ID }}..."
+          adb -s ${{ env.DEVICE_ID }} wait-for-device
+          adb -s ${{ env.DEVICE_ID }} shell "while [ \"$(getprop sys.boot_completed)\" != \"1\" ]; do sleep 2; done"
+          echo "Device ready."
+
+      - name: Verify device is listed
+        run: |
+          adb devices
+          adb -s ${{ env.DEVICE_ID }} shell echo "Device ${{ env.DEVICE_ID }} is reachable"
+
+      # -------------------------------------------------------
+      # Resolve test list — manual input or auto-discover all .air
+      # -------------------------------------------------------
+
+      - name: Resolve test list (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          INPUT="${{ github.event.inputs.test_files }}"
+          if [ -n "$INPUT" ]; then
+            echo "TEST_LIST=$INPUT" >> $GITHUB_ENV
+          else
+            FILES=$(find air_tests/DailyMission -maxdepth 1 -name "*.air" | sort | tr '\n' ' ')
+            echo "TEST_LIST=$FILES" >> $GITHUB_ENV
+          fi
+          echo "Tests to run: $TEST_LIST"
+
+      - name: Resolve test list (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $input = "${{ github.event.inputs.test_files }}"
+          if ($input -ne "") {
+            $list = $input
+          } else {
+            $list = (Get-ChildItem -Path "air_tests\DailyMission" -Filter "*.air" -Directory |
+                     Sort-Object Name | ForEach-Object { $_.FullName }) -join " "
+          }
+          echo "TEST_LIST=$list" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Tests to run: $list"
+
+      # -------------------------------------------------------
+      # Run batch — exit code = number of failed tests
+      # -------------------------------------------------------
+
+      - name: Run Airtest tests (batch)
+        run: >
+          python pixon_run.py ${{ env.TEST_LIST }}
+          --device android://127.0.0.1:5037/${{ env.DEVICE_ID }}
+          --report ${{ env.REPORT_DIR }}
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: airtest-reports-${{ github.run_number }}
+          path: ${{ env.REPORT_DIR }}
+          retention-days: 14
+
+      - name: Cleanup ADB server
+        if: always()
+        run: adb kill-server

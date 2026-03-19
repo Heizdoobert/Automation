@@ -1,9 +1,9 @@
+# pixon/ScrcpyRecorder.py
 import subprocess
 import time
 import signal
 import sys
 from pathlib import Path
-
 
 class ScrcpyRecorder:
     def __init__(
@@ -54,7 +54,6 @@ class ScrcpyRecorder:
             ),
         )
 
-        # Give scrcpy time to initialize stream
         time.sleep(1)
 
     def stop(self, timeout: float = 5.0):
@@ -73,7 +72,6 @@ class ScrcpyRecorder:
         finally:
             self.proc = None
 
-        # Ensure file is finalized
         time.sleep(1)
 
         if not self.output.exists() or self.output.stat().st_size < 1024:
@@ -85,3 +83,4 @@ class ScrcpyRecorder:
 
     def __exit__(self, exc_type, exc, tb):
         self.stop()
+        

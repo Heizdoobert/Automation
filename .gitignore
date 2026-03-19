@@ -1,3 +1,44 @@
-Reports/
-log/
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.egg-info/
+dist/
+build/
+
+# Airtest
+*.air/log/
+*.air/Reports/
+*.mp4
+
+# IDE
+.vscode/
+.idea/
+
+# Local
+.env
+.mcp.json
+instructions.md
+excel_server.py
+.claude.json
+reports/
+log/
+agent.py
+package-lock.json
+package.json
+utils.py
+node_modules/
+file_handler.py
+llm_client.py
+project_knowledge.py
+validator.py
+tools/
+strategy/
+memory/
+knowledge/
+identity/
+environment/
+agents/
+DailyMission.xlsx
