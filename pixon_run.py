@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from pixonwrapper import *
+from pixon.pixonwrapper import *
 
 logger = logging.getLogger("airtest")
 logger.setLevel(logging.ERROR)
@@ -209,15 +209,6 @@ def main(argv: list[str] | None = None) -> int:
     for name, ok in results:
         print(f"  {'✓ PASS' if ok else '✗ FAIL'}  {name}")
     print(f"{'='*60}\n")
-
-    try:
-        from airtest.core.android.adb import ADB
-
-        if G.DEVICE:
-            adb: ADB = G.DEVICE.adb
-            adb.kill_server()
-    except Exception as e:
-        print(f"Failed to kill ADB server: {e}")
 
     return failed
 

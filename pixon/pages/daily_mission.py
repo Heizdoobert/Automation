@@ -138,5 +138,5 @@ class DailyMissionPage(BasePage):
 
     def _find_all_elements(self, template, timeout=1) -> list:
         screen = wrapper.get_screen()
-        pos = template.match_in(screen)
+        pos = template.match_all_in(screen)
         return [pos] if pos else []

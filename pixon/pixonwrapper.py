@@ -297,29 +297,20 @@ def read_level_from_badge(screen_bgr: np.ndarray, bbox):
     return None
 
 
-def retry(times=3, delay=0.5, exceptions=(Exception,), on_retry=None):
+def retry(times=3, delay=0.5, exceptions=(Exception,), failure_values=(None,)):
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
-            last_exc = None
             for attempt in range(1, times + 1):
                 try:
                     result = fn(*args, **kwargs)
-                    if result is not None:
+                    if result not in failure_values: 
                         return result
-                    if attempt < times:
-                        if on_retry:
-                            on_retry(fn.__name__, attempt, None)
-                        time.sleep(delay)
-                except exceptions as exc:
-                    last_exc = exc
-                    if attempt < times:
-                        if on_retry:
-                            on_retry(fn.__name__, attempt, exc)
-                        time.sleep(delay)
-            if last_exc:
-                raise last_exc
-            return None
+                except exceptions:
+                    if attempt == times:
+                        raise
+                time.sleep(delay)
+            return failure_values[0]
         return wrapper
     return decorator
 

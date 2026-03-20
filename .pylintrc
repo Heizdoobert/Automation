@@ -11,17 +11,19 @@
 # E1101 no-member                 — cv2, airtest members not resolved without native libs
 # R0903 too-few-public-methods    — test helper classes intentionally small
 # W0611 unused-import             — some airtest names imported for re-export
-disable=C0114,
-        C0115,
-        C0116,
-        C0411,
-        W0401,
-        W0614,
-        E0401,
-        E0602,
-        E1101,
-        R0903,
-        W0611
+disable=
+    C0114, # missing-module-docstring 
+    C0115, # missing-class-docstring
+    C0116, # missing-function-docstring
+    W0401, # wildcard-import (Bắt buộc do thiết kế của Airtest)
+    W0614  # unused-wildcard-import
+
+[TYPECHECK]
+extension-pkg-allow-list=cv2,numpy
+
+[VARIABLES]
+ignored-modules=airtest,paddleocr,paddle
+additional-builtins=G,ST,Template,touch,wait,sleep,snapshot,log,start_app,stop_app,keyevent,text
 
 [FORMAT]
 max-line-length=110
