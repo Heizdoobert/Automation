@@ -1,0 +1,54 @@
+import sys
+import traceback
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from airtest.core.api import *
+import pixon.pixonwrapper as wrapper
+from pixon.pages.home_page import HomePage
+from pixon.pages.cheat_page import CheatPage
+from pixon.pages.game_page import GamePage
+from pixon.pages.daily_mission import DailyMissionPage
+from pixon.pages.remove_ads import RemoveAds
+from pixon.pages.setting_page import SettingPage
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app
+
+auto_setup(__file__)
+
+package_name = "com.woodpuzzle.pin3d"
+
+home_page = HomePage()
+cheat = CheatPage()
+game = GamePage()
+daily = DailyMissionPage()
+ads = RemoveAds()
+setting = SettingPage()
+
+def main():
+    try:
+        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        wrapper.log_info("=== TC29: Kill app and reopen ===")
+        setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
+        execute_mission_action(game, cheat, "complete_levels", 3)
+        exp_before = daily.get_exp_progress()
+        stop_app(package_name)
+        sleep(2)
+        start_app(package_name)
+        sleep(5)
+        home_page.go_home(force=True)
+        exp_after = daily.get_exp_progress()
+        if exp_after != exp_before:
+            raise AssertionError(f"EXP changed: {exp_before} -> {exp_after}")
+        wrapper.log_info("PASS: Data preserved after kill")
+        wrapper.log_info("=== TC29 PASSED ===")
+    except Exception as e:
+        wrapper.log_error(f"TC29 failed: {str(e)}\n{traceback.format_exc()}")
+        snapshot(filename="tc29_error.png")
+    finally:
+        teardown_app()
+
+if __name__ == "__main__":
+    main()
