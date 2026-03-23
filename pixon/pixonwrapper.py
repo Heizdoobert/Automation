@@ -65,13 +65,13 @@ def _get_screen_size():
 def swipe_up():
     w, h = _get_screen_size()
     swipe((int(w * 0.8), int(h * 0.8)), vector=[0, -0.4], duration=0.5)
-    sleep(1)
+    sleep(0.3)
 
 @logwrap
 def swipe_down():
     w, h = _get_screen_size()
     swipe((int(w * 0.8), int(h * 0.2)), vector=[0, 0.4], duration=0.5)
-    sleep(1)
+    sleep(0.3)
 
 @logwrap
 def swipe_left(start=None):
@@ -79,7 +79,7 @@ def swipe_left(start=None):
     if start is None:
         start = (w // 2, h // 2)
     swipe(start, [-0.2, 0], duration=0.5)
-    sleep(1)
+    sleep(0.3)
 
 @logwrap
 def swipe_right(start=None):
@@ -87,7 +87,7 @@ def swipe_right(start=None):
     if start is None:
         start = (w // 2, h // 2)
     swipe(start, [0.2, 0], duration=0.5)
-    sleep(1)
+    sleep(0.3)
 
 @logwrap
 def swipe_from_to(start, end):
@@ -190,7 +190,7 @@ def zoom_out(center=None):
 @logwrap
 def restart_app(package_name):
     stop_app(package_name)
-    sleep(3)
+    sleep(1)
     start_app(package_name)
 
 @logwrap

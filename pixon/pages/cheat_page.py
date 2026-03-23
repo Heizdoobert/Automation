@@ -19,6 +19,7 @@ class CheatPage(BasePage):
     level_label     = get_template("cheat/console/level/jump_to_number.png", (-0.19,   0.004))
     go_to_level_btn = get_template("cheat/console/level/btn_go_to_lv.png",   (-0.265, -0.482))
     winlevel_btn    = get_template("cheat/console/level/btn_winlv.png",       (-0.287, -0.325))
+    btn_break_all_piecein_wave = get_template("cheat/console/level/btn_break_all_piecein_wave.png", (-0.124, -0.167))
 
     speed_button = [
         get_template("cheat/console/auto_play_func/btn_speed_x1.png", (-0.383,  0.057)),
@@ -84,6 +85,9 @@ class CheatPage(BasePage):
         for _ in range(2):
             self.swipe("down")
         self.tap(self.winlevel_btn)
+
+    def break_all_piecein_wave(self) -> None:
+        self.tap(self.btn_break_all_piecein_wave)
 
     def win_level_and_continue(self) -> bool:
         home = HomePage()

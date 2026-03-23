@@ -23,6 +23,12 @@ class GamePage(BasePage):
         get_template("extend_play/cost_booster_3.png", (0.170, 0.066)),
     ]
 
+    BOOSTER_INDEX = {
+        "drill":  0,
+        "hammer": 1,
+        "magnet": 2,
+    }
+
     @property
     def CENTER(self):
         w, h = self.get_screen_size()
@@ -42,7 +48,7 @@ class GamePage(BasePage):
             )
             wrapper.log_info(msg)
 
-        @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,), on_retry=_on_retry)
+        @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()
             x1, y1, x2, y2 = self.LEVEL_AREA
@@ -81,8 +87,34 @@ class GamePage(BasePage):
                 else:
                     wrapper.log_info(f"Booster {i+1} available — no need to buy")
 
+    def _activate_single_booster(self, index: int) -> None:
+        sleep(2)
+        if self.wait_for_element(self.booster[index], timeout=3):
+            self.tap(self.booster[index])
+            sleep(2)
+            if self.wait_for_element(self.title_booster[index], timeout=3):
+                wrapper.log_info(f"Booster {index+1} ran out — buying with coin")
+                self.tap(self.pay_coin[index])
+                sleep(3)
+                self.tap(self.CENTER)
+            else:
+                wrapper.log_info(f"Booster {index+1} available — no need to buy")
+        else:
+            wrapper.log_warning(f"Booster {index+1} not found on screen")
+
     def use_booster(self, booster_type: str, count: int) -> None:
-        wrapper.log_info(f"use_booster: type={booster_type}, count={count} — not implemented")
+        if booster_type in ("", "any"):
+            wrapper.log_info(f"use_booster: any type x{count} — activating all boosters {count} time(s)")
+            for _ in range(count):
+                self.activate_boosters()
+            return
+        index = self.BOOSTER_INDEX.get(booster_type)
+        if index is None:
+            wrapper.log_warning(f"use_booster: unknown booster type '{booster_type}'")
+            return
+        wrapper.log_info(f"use_booster: {booster_type} (index={index}) x{count}")
+        for _ in range(count):
+            self._activate_single_booster(index)
 
     def spend_coins(self, amount: int) -> None:
         wrapper.log_info(f"spend_coins: amount={amount} — not implemented")
