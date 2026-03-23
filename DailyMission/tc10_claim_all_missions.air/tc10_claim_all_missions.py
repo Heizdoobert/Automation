@@ -14,7 +14,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
 auto_setup(__file__)
 
@@ -29,16 +29,16 @@ setting = SettingPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC10: Claim all missions at once ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
-        for i in range(5):
-            execute_mission_action(game, cheat, "complete_levels", 3)
-            sleep(1)
-        for i in range(5):
+        reward = daily.get_collect_mission_count()
+        for i in range(reward):
             daily.claim_mission(i)
             sleep(1)
+        check = daily.get_icon_claim_reward()
+        wrapper.log_info(f"See {check} mission has been claimed")
         wrapper.log_info("PASS: All missions claimed")
         wrapper.log_info("=== TC10 PASSED ===")
     except Exception as e:

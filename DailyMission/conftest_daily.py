@@ -1,4 +1,5 @@
 import time
+import random
 from airtest.core.api import exists, sleep, stop_app
 import pixon.pixonwrapper as wrapper
 from pixon.pages.home_page import HomePage
@@ -6,6 +7,7 @@ from pixon.pages.cheat_page import CheatPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from pixon.pages.game_page import GamePage
+from pixon.pages.daily_mission import DailyMissionPage
 
 package_name = "com.woodpuzzle.pin3d"
 DEFAULT_TARGET_LEVEL = 11
@@ -226,17 +228,26 @@ def wait_for_next_day(cheat: CheatPage) -> None:
 def execute_mission_action(
     game: GamePage,
     cheat: CheatPage,
+    daily: DailyMissionPage,
+    home_page: HomePage,
+    ads : RemoveAds,
     mission_type: str,
     value: int,
 ) -> None:
+    daily.take_mission()
     if mission_type == "complete_levels":
-        for _ in range(value):
-            cheat.open_cheat()
-            cheat.win_level_and_continue()
-            sleep(1)
-    elif mission_type.startswith("use_booster"):
+        wrapper.log_info("Complete levels mission")
+        target_level = game.get_current_level() + value
+        _autoplay_to_level(cheat, game, target_level)
+        go_home_clean(home_page)
+    elif mission_type == ("use_booster"):
+        booster = random.choice(["drill", "hammer", "magnet"])
+        game.use_booster(booster, value)
+        go_home_clean(home_page)
+    elif mission_type.startswith("use_booster_"):
         booster = mission_type.replace("use_booster_", "")
         game.use_booster(booster, value)
+        go_home_clean(home_page)
     elif mission_type == "spend_coins":
         game.spend_coins(value)
     elif mission_type == "collect_nails_red":
@@ -249,5 +260,10 @@ def execute_mission_action(
         wrapper.log_info("Watch ads action not yet implemented")
     elif mission_type == "play_minutes":
         wrapper.log_info("Play minutes action not yet implemented")
+    elif mission_type == "complete_levels_kill":
+        wrapper.log_info("Play level and kill app")
+        target_level = game.get_current_level() + value
+        _autoplay_to_level(cheat, game, target_level)
+        open_app_with_fake_ads(cheat, home_page, ads)
     else:
         wrapper.log_warning(f"Unknown mission type: {mission_type}")

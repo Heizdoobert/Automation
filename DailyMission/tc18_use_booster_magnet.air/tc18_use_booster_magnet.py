@@ -1,5 +1,6 @@
 import sys
 import traceback
+import random
 from pathlib import Path
 
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -14,7 +15,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app,open_app_with_fake_ads
 
 auto_setup(__file__)
 
@@ -29,12 +30,14 @@ setting = SettingPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC18: Use 2,5,8 magnet boosters ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        execute_mission_action(game, cheat, "use_booster_magnet", 2)
         daily.open_daily_mission_popup()
-        wrapper.log_info("PASS: Used magnet boosters")
+        execute_mission_action(game, cheat, daily, home_page,ads, "use_booster_magnet", random.choice([2,5,10]))
+        daily.open_daily_mission_popup()
+        if not daily.wait_for_element(daily.btn_collect, timeout=5):
+            raise AssertionError("Mission not marked as complete")
         wrapper.log_info("=== TC18 PASSED ===")
     except Exception as e:
         wrapper.log_error(f"TC18 failed: {str(e)}\n{traceback.format_exc()}")

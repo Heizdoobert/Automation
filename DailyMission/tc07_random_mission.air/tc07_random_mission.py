@@ -33,10 +33,19 @@ def main():
         wrapper.log_info("=== TC07: Check random 5 missions per day ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
-        count = daily.get_mission_count()
-        if count != 5:
-            raise AssertionError(f"Expected 5 missions, got {count}")
-        wrapper.log_info(f"PASS: {count} missions displayed")
+        count_a = daily.get_mission_count()
+        count_b = daily.get_collect_mission_count()
+        if count_a != 5:
+            for i in range(count_b):
+                daily.claim_mission(i)
+            # Close and reopen popup to refresh UI state after claiming
+            daily.tap(daily.btn_close)
+            sleep(2)
+            daily.open_daily_mission_popup()
+            count_a = daily.get_mission_count()
+            if count_a != 5:
+                raise AssertionError(f"Expected 5 missions, got {count_a}")
+        wrapper.log_info(f"PASS: {count_a} missions displayed")
         wrapper.log_info("=== TC07 PASSED ===")
     except Exception as e:
         wrapper.log_error(f"TC07 failed: {str(e)}\n{traceback.format_exc()}")

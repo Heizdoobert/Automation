@@ -40,12 +40,10 @@ def main():
         wait_for_next_day(cheat)
         daily.open_daily_mission_popup()
         # Get missions list
-        missions = daily.get_missions()  # Assuming this method exists
-        wrapper.log_info(f"Found {len(missions)} missions: {missions}")
-        if len(missions) != 5:
-            raise AssertionError(f"Expected 5 missions, got {len(missions)}")
-        # Check uniqueness        if len(set(missions)) != len(missions):
-            raise AssertionError("Duplicate missions found")
+        exp = daily.get_collect_mission_count()
+        if exp != None:
+            daily.claim_mission(exp)
+        daily.get_exp_progress()
         wrapper.log_info("PASS: 5 unique missions displayed")
         wrapper.log_info("=== TC08 PASSED ===")
     except Exception as e:

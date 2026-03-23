@@ -13,12 +13,13 @@ class DailyMissionPage(BasePage):
     btn_close                = get_template("system_function/btn_close.png",           ( 0.365, -0.858))
     btn_daily_mission_notify = get_template("home_page/btn_daily_mission_notify.png", (-0.396, -0.543))
     btn_play_daily           = get_template("daily_mission/btn_play_daily.png",        ( 0.261, -0.233))
-    btn_collect              = get_template("daily_mission/btn_collect.png",           ( 0.2,    0.1  ))
+    btn_collect              = get_template("daily_mission/btn_collect.png",           (0.261, 0.113))
     exp_milestone_boxes = [
         get_template("daily_mission/box_30.png",  (-0.128, -0.469)),
         get_template("daily_mission/box_70.png",  ( 0.122, -0.474)),
         get_template("daily_mission/box_100.png", ( 0.317, -0.478)),
     ]
+    icon_reward_claim = get_template("daily_mission/icon_reward_claimed.png", (0.268, 0.454))
 
     MISSION_LIST_AREA = (100, 300, 600, 800)
     EXP_VALUE_AREA    = (300, 500, 400, 550)
@@ -94,17 +95,31 @@ class DailyMissionPage(BasePage):
             raise AssertionError("complete_daily_mission_tutorial: Daily Mission icon not visible after tutorial")
 
     def get_mission_count(self) -> int:
+        return len(self._find_all_elements(self.btn_play_daily))
+
+    def get_collect_mission_count(self) -> int:
         return len(self._find_all_elements(self.btn_collect))
+    
+    def get_icon_claim_reward(self) -> int:
+        return len(self._find_all_elements(self.icon_reward_claim))
 
     def claim_mission(self, index: int) -> bool:
         positions = self._find_all_elements(self.btn_collect)
         if index < len(positions):
-            self.tap(positions[index])
+            pos = positions[index]
+            if isinstance(pos, dict):
+                pos = pos['result']
+            self.tap(pos)
             sleep(1)
             wrapper.log_info(f"Claimed mission {index + 1}")
             return True
         wrapper.log_warning(f"Mission index {index} out of range (total {len(positions)})")
         return False
+    
+    def take_mission(self):
+        play_missions = self._find_all_elements(self.btn_play_daily)
+        if len(play_missions) != 0:
+            self.tap(self.btn_play_daily)
 
     def get_exp_progress(self) -> int:
         @wrapper.retry(times=3, delay=1, exceptions=(Exception,))
@@ -139,4 +154,4 @@ class DailyMissionPage(BasePage):
     def _find_all_elements(self, template, timeout=1) -> list:
         screen = wrapper.get_screen()
         pos = template.match_all_in(screen)
-        return [pos] if pos else []
+        return pos if pos else []
