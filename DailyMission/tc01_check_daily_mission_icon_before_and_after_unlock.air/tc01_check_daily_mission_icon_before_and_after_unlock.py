@@ -16,7 +16,8 @@ from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
-    reset_progress, teardown_app, _enter_game_and_get_level, open_app_with_fake_ads
+    reset_progress, teardown_app, open_app_with_fake_ads,
+    _set_level_and_win, go_home_clean
 )
 
 auto_setup(__file__)
@@ -39,33 +40,22 @@ def main():
         reset_progress(home_page, setting, cheat, game, target_level=7, wait=15)
 
         wrapper.log_info("Checking at level 7...")
-        cheat.open_cheat()
-        cheat.auto_play_off()
-        cheat.close_cheat()
-        home_page.go_home(force=True)
+        go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
             raise AssertionError("Daily Mission icon appeared at level 7!")
         wrapper.log_info("PASS: No icon at level 7")
 
-        _enter_game_and_get_level(home_page, game)
-        wrapper.log_info("Setting level to 10...")
-        cheat.open_cheat()
-        cheat.set_level(10)
-        cheat.win_level_and_continue()
-        sleep(3)
-        home_page.go_home(force=True)
+        wrapper.log_info("Setting level to 10 via ADB and winning...")
+        _set_level_and_win(cheat, home_page, 10)
+        go_home_clean(home_page)
 
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
             raise AssertionError("Daily Mission icon appeared at level 10!")
         wrapper.log_info("PASS: No icon at level 10")
 
-        _enter_game_and_get_level(home_page, game)
-        wrapper.log_info("Setting level to 11...")
-        cheat.open_cheat()
-        cheat.set_level(11)
-        cheat.win_level_and_continue()
-        sleep(3)
-        home_page.go_home(force=True)
+        wrapper.log_info("Setting level to 11 via ADB and winning...")
+        _set_level_and_win(cheat, home_page, 11)
+        go_home_clean(home_page)
 
         if not daily.wait_for_element(daily.btn_daily_mission_notify, timeout=5):
             raise AssertionError("Daily Mission icon did NOT appear after level 11!")

@@ -1,5 +1,6 @@
 import sys
 import traceback
+import random
 from pathlib import Path
 
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -14,7 +15,8 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app
+from pixon.pages.lucky_spin import LuckySpinPage
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app,open_app_with_fake_ads
 
 auto_setup(__file__)
 
@@ -26,14 +28,18 @@ game = GamePage()
 daily = DailyMissionPage()
 ads = RemoveAds()
 setting = SettingPage()
+lucky = LuckySpinPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC19: Collect 50 red nails ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        execute_mission_action(game, cheat, "collect_nails_red", 50)
         daily.open_daily_mission_popup()
+        execute_mission_action(game, cheat,daily, home_page, ads, lucky, "collect_nails_red", 50)
+        daily.open_daily_mission_popup()
+        if not daily.wait_for_element(daily.btn_collect, timeout=5):
+            raise AssertionError("Mission not marked as complete")
         wrapper.log_info("PASS: Collected red nails")
         wrapper.log_info("=== TC19 PASSED ===")
     except Exception as e:

@@ -16,7 +16,8 @@ from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
-    setup_fresh_install, teardown_app, _enter_game_and_get_level, open_app_with_fake_ads
+    setup_fresh_install, teardown_app, open_app_with_fake_ads,
+    _set_level_and_win, go_home_clean, _enter_game_and_get_level
 )
 
 auto_setup(__file__)
@@ -36,14 +37,14 @@ def main():
         open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC03: Fresh install — popup tutorial after unlock ===")
 
-        setup_fresh_install(home_page, cheat, game, setting, level_timeout=260)
+        setup_fresh_install(home_page, cheat, game, setting)
 
+        wrapper.log_info("Setting level to 11 and winning to trigger unlock...")
+        _set_level_and_win(cheat, home_page, 11)
         _enter_game_and_get_level(home_page, game)
+        go_home_clean(home_page)
 
-        cheat.open_cheat()
-        cheat.win_level_and_continue()
-        sleep(3)
-
+        wrapper.log_info("Completing Daily Mission tutorial...")
         daily.complete_daily_mission_tutorial()
 
         assert daily.verify_daily_mission_icon_on_home(), \

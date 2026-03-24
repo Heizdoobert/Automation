@@ -18,6 +18,7 @@ build/
 .idea/
 .cursor/
 .github/
+.gitignore
 # Local
 .env
 .mcp.json
@@ -43,3 +44,4 @@ identity/
 environment/
 agents/
 DailyMission.xlsx
+openclaw_agent.py
