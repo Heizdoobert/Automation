@@ -16,6 +16,7 @@ class HomePage(BasePage):
     splash_home_icon   = get_template("label_main_home.png",     (-0.006,  0.792))
     main_home_btn      = get_template("home_page/btn_main_home.png", ( 0.001,  0.794))
     main_play_btn      = get_template("home_page/btn_play.png",      ( 0.003,  0.497))
+    btn_lucky_spin     = get_template("home_page/btn_lucky_spin.png",     (-0.401, -0.364))
     btn_setting        = get_template("system_function/btn_setting.png",  ( 0.425, -0.811))
     btn_home           = get_template("system_function/btn_home.png",     (-0.01,   0.357))
     btn_close          = get_template("system_function/btn_close.png",    ( 0.347, -0.294))

@@ -14,7 +14,8 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, execute_mission_action, open_app_with_fake_ads
+from pixon.pages.lucky_spin import LuckySpinPage
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, execute_mission_action, open_app_with_fake_ads, go_home_clean
 
 auto_setup(__file__)
 
@@ -26,6 +27,7 @@ game = GamePage()
 daily = DailyMissionPage()
 ads = RemoveAds()
 setting = SettingPage()
+lucky = LuckySpinPage()
 
 def main():
     try:
@@ -33,9 +35,9 @@ def main():
         wrapper.log_info("=== TC06: Notify after completing mission but not claiming ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
-        execute_mission_action(game, cheat, "complete_levels", 3)
+        execute_mission_action(game, cheat, daily, home_page, ads,lucky , "complete_levels", 3)
         sleep(2)
-        home_page.go_home(force=True)
+        go_home_clean(home_page)
         if not daily.is_notify_visible():
             raise AssertionError("Notify not visible after completing mission")
         wrapper.log_info("PASS: Notify visible")

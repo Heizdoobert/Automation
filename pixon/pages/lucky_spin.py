@@ -1,19 +1,20 @@
 # pages/lucky_spin.py
 from pixon.common.base_page import BasePage
-from pathlib import Path
-from airtest.core.api import Template, sleep
+from .home_page import get_template, HomePage
+from airtest.core.api import touch, sleep, keyevent, text
 import pixon.pixonwrapper as wrapper
 
-IMAGE_DIR = Path(__file__).resolve().parent / "images"
-
-def get_template(relative_path, record_pos, resolution=(720, 1280)):
-    return Template(str(IMAGE_DIR / relative_path), record_pos=record_pos, resolution=resolution)
-
-
 class LuckySpinPage(BasePage):
+    btn_spin = get_template("lucky_spin/btn_spin.png", (-0.001, 0.528))
+    label_lucky_spin = get_template("lucky_spin/label_lucky_spin.png", (0.004, -0.644))      
 
+    def roll_out(self) -> None:
+        home = HomePage()
+        home.tap(home.btn_lucky_spin)
+        self.spin()
+        sleep(4)
+        home.tap(home.btn_close)
 
-    def open_spin(self):
-        return
-    def spin(self):
-        return
+    def spin(self) -> None:
+        self.tap(self.btn_spin)
+        sleep(2)

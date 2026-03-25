@@ -34,9 +34,7 @@ def main():
         wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
         wrapper.log_info("=== TC21: Lucky spin (already unlocked) ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        lucky.open_spin()
-        lucky.spin()
-        sleep(2)
+        lucky.roll_out()
         wrapper.log_info("PASS: Lucky spin completed")
         wrapper.log_info("=== TC21 PASSED ===")
     except Exception as e:

@@ -15,6 +15,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
+from pixon.pages.lucky_spin import LuckySpinPage
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
 auto_setup(__file__)
@@ -27,6 +28,7 @@ game = GamePage()
 daily = DailyMissionPage()
 ads = RemoveAds()
 setting = SettingPage()
+lucky = LuckySpinPage()
 
 def main():
     try:
@@ -34,7 +36,7 @@ def main():
         wrapper.log_info("=== TC16: Use 2,5,8 hammer boosters ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
-        execute_mission_action(game, cheat, daily, home_page,ads, "use_booster_hammer", random.choice([2,5,10]))
+        execute_mission_action(game, cheat, daily, home_page,ads, lucky, "use_booster_hammer", random.choice([2,5,10]))
         daily.open_daily_mission_popup()
         if not daily.wait_for_element(daily.btn_collect, timeout=5):
             raise AssertionError("Mission not marked as complete")
