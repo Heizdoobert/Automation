@@ -19,7 +19,7 @@ class HomePage(BasePage):
     btn_lucky_spin     = get_template("home_page/btn_lucky_spin.png",     (-0.401, -0.364))
     btn_setting        = get_template("system_function/btn_setting.png",  ( 0.425, -0.811))
     btn_home           = get_template("system_function/btn_home.png",     (-0.01,   0.357))
-    btn_close          = get_template("system_function/btn_close.png",    ( 0.347, -0.294))
+    btn_close          = get_template("system_function/btn_close.png",    ( 0.365, -0.861))
     btn_tutorial       = get_template("system_function/btn_tutorial.png", (-0.415, -0.799))
     btn_next           = get_template("system_function/btn_next.png",     (-0.01,   0.256))
     btn_delete         = get_template("system_function/btn_delete.png",   (-0.001,  0.201))

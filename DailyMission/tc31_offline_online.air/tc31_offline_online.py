@@ -14,7 +14,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, open_app_with_fake_ads
 import subprocess
 
 auto_setup(__file__)
@@ -30,7 +30,7 @@ setting = SettingPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC31: Offline -> online ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         serial = G.DEVICE.serialno

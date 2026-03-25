@@ -83,9 +83,16 @@ class GamePage(BasePage):
                     wrapper.log_info(f"Booster {i+1} ran out — buying with coin")
                     self.tap(self.pay_coin[i])
                     sleep(3)
+                    wrapper.log_info(f"Center coordinates: {self.CENTER}")
                     self.tap(self.CENTER)
+                    sleep(2)
                 else:
                     wrapper.log_info(f"Booster {i+1} available — no need to buy")
+                    wrapper.log_info(f"Center coordinates: {self.CENTER}")
+                    self.tap(self.CENTER)
+                    sleep(2)
+            else:
+                wrapper.log_warning(f"Booster {i+1} not found on screen")
 
     def _activate_single_booster(self, index: int) -> None:
         sleep(2)
@@ -97,8 +104,11 @@ class GamePage(BasePage):
                 self.tap(self.pay_coin[index])
                 sleep(3)
                 self.tap(self.CENTER)
+                sleep(2)
             else:
                 wrapper.log_info(f"Booster {index+1} available — no need to buy")
+                self.tap(self.CENTER)
+                sleep(2)
         else:
             wrapper.log_warning(f"Booster {index+1} not found on screen")
 
