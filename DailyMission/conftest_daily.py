@@ -23,10 +23,24 @@ LEVEL_WAIT_TIMEOUT = 300
 
 # ==================== UI HELPERS ====================
 def open_app_with_fake_ads(cheat: CheatPage, home: HomePage, ads: RemoveAds) -> None:
+    """Setup app with fake ads on.
+
+    Args:
+        cheat (CheatPage): Open cheat mode
+        home (HomePage): Checking home
+        ads (RemoveAds): Setup fake ads
+    """
     cold_start_with_combined(fakeads=True)
+    sleep(10)
     close_all_popups(home)
 
 def close_all_popups(home: HomePage, repeat: int = 5) -> None:
+    """Close popups displayed on screen.
+
+    Args:
+        home (HomePage): HomePage instance to check for popups
+        repeat (int, optional): Number of times to repeat checking for popups. Defaults to 5.
+    """
     closed = 0
     for _ in range(repeat):
         if exists(home.btn_close):
@@ -39,6 +53,12 @@ def close_all_popups(home: HomePage, repeat: int = 5) -> None:
         wrapper.log_info(f"Closed {closed} popup(s)")
 
 def go_home_clean(home: HomePage, retries: int = 3) -> None:
+    """Navigate to and confirm home screen.
+
+    Args:
+        home (HomePage): HomePage instance for navigation and state checking
+        retries (int, optional): Number of retry attempts to reach home. Defaults to 3.
+    """
     close_all_popups(home)
     if home.is_at_home():
         wrapper.log_info("Already at home")
@@ -58,18 +78,47 @@ def go_home_clean(home: HomePage, retries: int = 3) -> None:
 
 # ==================== GAME & LEVEL HELPERS ====================
 def _enter_game_and_get_level(home: HomePage, game: GamePage) -> int:
+    """Enter the game and return the current level.
+
+    Args:
+        home (HomePage): HomePage instance to check home state and start game
+        game (GamePage): GamePage instance to get the current level
+
+    Returns:
+        int: The current level in the game
+    """
     if home.is_at_home():
         home.click_play()
         sleep(3)
     return game.get_current_level()
 
 def _wait_for_splash_and_enter_game(home: HomePage, game: GamePage) -> int:
+    """Wait for splash screen to disappear then enter game and return current level.
+
+    Args:
+        home (HomePage): HomePage instance to check splash screen and close popups
+        game (GamePage): GamePage instance to get the current level
+
+    Returns:
+        int: The current level in the game
+    """
     if not wrapper.wait_not_exists(home.splash_screen_icon, timeout=60, interval=1):
         wrapper.log_info("Splash still showing after 60s")
     close_all_popups(home)
     return _enter_game_and_get_level(home, game)
 
 def _autoplay_to_level(cheat: CheatPage, game: GamePage, target_level: int, timeout: int = LEVEL_WAIT_TIMEOUT) -> None:
+    """Run autoplay until the target level is reached.
+
+    Args:
+        cheat (CheatPage): CheatPage instance to control autoplay
+        game (GamePage): GamePage instance to get the current level
+        target_level (int): The target level to reach
+        timeout (int, optional): Maximum time in seconds to wait for the target level. Defaults to LEVEL_WAIT_TIMEOUT.
+
+    Raises:
+        AssertionError: If the target level is not reached within the timeout.
+    """
     cheat.open_cheat()
     cheat.auto_play_on()
     cheat.close_cheat()
@@ -86,6 +135,13 @@ def _autoplay_to_level(cheat: CheatPage, game: GamePage, target_level: int, time
     raise AssertionError(f"Autoplay failed to reach level {target_level} in {timeout}s")
 
 def _advance_levels(cheat: CheatPage, game: GamePage, target_level: int) -> None:
+    """Advance the game level by level until the target level is reached.
+
+    Args:
+        cheat (CheatPage): CheatPage instance to control cheating actions
+        game (GamePage): GamePage instance to get the current level
+        target_level (int): The target level to reach
+    """
     current_lv = game.get_current_level()
     if current_lv >= target_level:
         return
@@ -97,7 +153,14 @@ def _advance_levels(cheat: CheatPage, game: GamePage, target_level: int) -> None
         sleep(2)
     wrapper.log_info(f"Advanced from level {current_lv} to {target_level}")
 
-def _set_level_and_win(cheat: CheatPage, home:HomePage, level: int) -> None:
+def _set_level_and_win(cheat: CheatPage, home: HomePage, level: int) -> None:
+    """Set the level and win it to return to home.
+
+    Args:
+        cheat (CheatPage): CheatPage instance to open cheat and win the level
+        home (HomePage): HomePage instance to start the game
+        level (int): The level to set and win
+    """
     home.click_play()
     set_level(level)
     sleep(1)
@@ -113,6 +176,14 @@ def setup_fresh_install(
     game: GamePage,
     setting: SettingPage,
 ) -> None:
+    """Set up a fresh install of the game.
+
+    Args:
+        home (HomePage): HomePage instance for navigation
+        cheat (CheatPage): CheatPage instance for cheating
+        game (GamePage): GamePage instance for game actions
+        setting (SettingPage): SettingPage instance for settings
+    """
     go_home_clean(home)
     setting.delete_progress(assume_at_home=True)
     _wait_for_splash_and_enter_game(home, game)
@@ -131,6 +202,16 @@ def reset_progress(
     target_level: int = DEFAULT_TARGET_LEVEL,
     wait: int = 15,
 ) -> None:
+    """Reset game progress and set up to a target level.
+
+    Args:
+        home (HomePage): HomePage instance for navigation
+        setting (SettingPage): SettingPage instance for settings
+        cheat (CheatPage): CheatPage instance for cheating
+        game (GamePage): GamePage instance for game actions
+        target_level (int, optional): The target level to set after reset. Defaults to DEFAULT_TARGET_LEVEL.
+        wait (int, optional): Time in seconds to wait after deleting progress. Defaults to 15.
+    """
     go_home_clean(home)
     setting.delete_progress(assume_at_home=True)
     sleep(wait)
@@ -146,6 +227,13 @@ def cold_start_unlock_daily_mission(
     setting: SettingPage,
     game: GamePage,
 ) -> None:
+    """Unlock the daily mission by starting from a cold start at the target level.
+
+    Args:
+        home (HomePage): HomePage instance for navigation
+        setting (SettingPage): SettingPage instance for settings
+        game (GamePage): GamePage instance for game actions
+    """
     go_home_clean(home)
     setting.delete_progress(assume_at_home=True)
     _wait_for_splash_and_enter_game(home, game)
@@ -157,6 +245,14 @@ def setup_unlocked_daily_mission(
     game: GamePage,
     target_level: int = DEFAULT_TARGET_LEVEL,
 ) -> None:
+    """Step to unlock the daily mission by setting the level if needed.
+
+    Args:
+        home (HomePage): HomePage instance for navigation
+        cheat (CheatPage): CheatPage instance for cheating
+        game (GamePage): GamePage instance for game actions
+        target_level (int, optional): The target level to reach. Defaults to DEFAULT_TARGET_LEVEL.
+    """
     current_lv = _enter_game_and_get_level(home, game)
     if current_lv < target_level:
         _set_level_and_win(cheat, home, target_level)
@@ -164,6 +260,9 @@ def setup_unlocked_daily_mission(
     go_home_clean(home)
 
 def teardown_app() -> None:
+    """Stop the app.
+
+    """
     stop_app(package_name)
 
 
@@ -178,6 +277,18 @@ def execute_mission_action(
     mission_type: str,
     value: int,
 ) -> None:
+    """Execute a daily mission action based on the mission type.
+
+    Args:
+        game (GamePage): GamePage instance for game actions
+        cheat (CheatPage): CheatPage instance for cheating
+        daily (DailyMissionPage): DailyMissionPage instance to take the mission
+        home_page (HomePage): HomePage instance for navigation
+        ads (RemoveAds): RemoveAds instance for ads-related actions
+        lucky_spin (LuckySpinPage): LuckySpinPage instance for lucky spin
+        mission_type (str): The type of mission to execute
+        value (int): The value associated with the mission (e.g., number of levels, coins, etc.)
+    """
     daily.take_mission()
     if mission_type == "complete_levels":
         target_level = game.get_current_level() + value
@@ -219,6 +330,14 @@ def execute_mission_action(
 
 # ==================== VALIDATION HELPERS ====================
 def check_lucky(lucky: LuckySpinPage) -> bool:
+    """Check if the lucky spin is not present (i.e., the lucky spin has been used or is not available).
+
+    Args:
+        lucky (LuckySpinPage): LuckySpinPage instance to check the lucky spin label
+
+    Returns:
+        bool: True if the lucky spin label does not exist (meaning the spin is done or not available), False otherwise
+    """
     if wrapper.wait_not_exists(lucky.label_lucky_spin, timeout=5, interval=1):
         return True
     return False

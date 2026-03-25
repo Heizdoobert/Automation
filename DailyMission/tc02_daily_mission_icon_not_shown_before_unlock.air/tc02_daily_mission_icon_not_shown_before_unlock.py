@@ -45,7 +45,7 @@ def main():
         wrapper.log_info("PASS: No icon at level 7")
 
         wrapper.log_info("Setting level to 10 via ADB and winning...")
-        _set_level_and_win(cheat, 10)
+        _set_level_and_win(cheat, home_page, 10)
         go_home_clean(home_page)
 
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
@@ -53,7 +53,7 @@ def main():
         wrapper.log_info("PASS: No icon after winning level 10")
 
         wrapper.log_info("Setting level to 11 via ADB and winning...")
-        _set_level_and_win(cheat, 11)
+        _set_level_and_win(cheat, home_page, 11)
         go_home_clean(home_page)
 
         if not daily.wait_for_element(daily.btn_daily_mission, timeout=5):
