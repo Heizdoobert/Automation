@@ -37,10 +37,11 @@ def main():
         open_app_with_fake_ads(cheat, home_page, ads)
         wrapper.log_info("=== TC01, TC02: Check Daily Mission icon before and after unlock ===")
 
-        reset_progress(home_page, setting, cheat, game, target_level=7, wait=15)
+        wrapper.log_info("Setting level to 7 via ADB and winning...")
+        _set_level_and_win(cheat, home_page, 7)
+        go_home_clean(home_page)
 
         wrapper.log_info("Checking at level 7...")
-        go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
             raise AssertionError("Daily Mission icon appeared at level 7!")
         wrapper.log_info("PASS: No icon at level 7")

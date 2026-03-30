@@ -16,11 +16,11 @@ class SettingPage(BasePage):
     blank_confirm        = get_template("settings_page/blank_confirm.png",          ( 0.003,  0.064))
     label_setting        = get_template("settings_page/label_setting.png",          ( 0.003, -0.594))
 
-    def open_setting(self, retry: int = 2) -> bool:
+    def open_setting(self, retry: int = 5) -> bool:
         for attempt in range(retry):
             self.tap(self.btn_setting)
-            sleep(1)
-            if self.wait_for_element(self.label_setting, timeout=5):
+            sleep(2)
+            if self.wait_for_element(self.label_setting, timeout=15):
                 return True
             wrapper.log_warning(f"open_setting attempt {attempt+1} failed")
         wrapper.log_error("open_setting: settings panel did not open")
@@ -46,9 +46,9 @@ class SettingPage(BasePage):
 
     def delete_progress(self, word: str = "confirm", assume_at_home: bool = False) -> None:
         home = HomePage()
-        if assume_at_home:
-            wrapper.log_info("delete_progress: assume_at_home=True — skip go_home()")
-        else:
+        # Even if we assume we are at home, let's check and try to go home if not.
+        if not home.is_at_home():
+            wrapper.log_info("delete_progress: not at home — trying to go home")
             if not home.go_home(force=True):
                 raise AssertionError("delete_progress: failed to navigate to home screen")
 
