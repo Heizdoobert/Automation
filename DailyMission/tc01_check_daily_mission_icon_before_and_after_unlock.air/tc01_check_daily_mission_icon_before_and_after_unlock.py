@@ -22,6 +22,15 @@ from DailyMission.conftest_daily import (
 
 auto_setup(__file__)
 
+# Add device connection check
+from airtest.core.api import connect_device
+from airtest.core.error import NoDeviceError
+
+# Try to connect to any available device
+G.DEVICE.connect()
+if not G.device:
+    raise RuntimeError("No devices available. Please connect your Android device or check ADB connection.")
+
 package_name = "com.woodpuzzle.pin3d"
 
 home_page = HomePage()

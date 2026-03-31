@@ -10,7 +10,7 @@ from pathlib import Path
 from pixon.pixonwrapper import *
 
 logger = logging.getLogger("airtest")
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 
 def _collect_air_paths(argsv: list[str]) -> list[str]:
     raw_names = [a for a in argsv if a.lower().endswith(".air")]
@@ -91,7 +91,7 @@ def run_one(
         test_passed = False
 
     finally:
-        print(f"  Exporting report → {test_report_dir}")
+        print(f"  Exporting report -> {test_report_dir}")
         try:
             from airtest.report.report import LogToHtml
 
@@ -197,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
 
         passed = run_one(air_name, report_root, device_id, args.recording, current_dir)
         results.append((test_name, passed))
-        print(f"  → {test_name}: {'PASSED ✓' if passed else 'FAILED ✗'}")
+        print(f"  -> {test_name}: {'PASSED PASS' if passed else 'FAILED FAIL'}")
 
     generate_summary_report(results, report_root)
 
@@ -207,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"\n{'='*60}\n  TEST SUMMARY  ({passed_cnt}/{total} passed)\n{'='*60}")
     for name, ok in results:
-        print(f"  {'✓ PASS' if ok else '✗ FAIL'}  {name}")
+        print(f"  {'PASS' if ok else 'FAIL'}  {name}")
     print(f"{'='*60}\n")
 
     return failed
