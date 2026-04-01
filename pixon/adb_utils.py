@@ -65,7 +65,15 @@ def cold_start_with_autorotate(enabled):
     """Cold start the app with auto‑rotation enabled/disabled."""
     return cold_start_with_json({"autorotate": enabled})
 
-def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None):
+def cold_start_with_autoplay(enabled):
+    """Cold start the app with AutoAgent enabled/disabled."""
+    return cold_start_with_json({"autoplay": enabled, "playspeed": 2})
+
+def cold_start_with_heart(heart_count):
+    """Cold start the app with a specific heart count."""
+    return cold_start_with_json({"heart": heart_count})
+
+def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None, heart=None):
     """Cold start the app with a comprehensive payload."""
     payload = {}
     if level is not None: payload["level"] = level
@@ -75,6 +83,7 @@ def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, 
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
     if playspeed is not None: payload["playspeed"] = playspeed
+    if heart is not None: payload["heart"] = heart
     return cold_start_with_json(payload) if payload else False
 
 def set_level(level):
@@ -105,7 +114,11 @@ def set_playspeed(speed):
     """Set the game time scale while the app is running."""
     return warm_send_json({"playspeed": speed})
 
-def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None):
+def set_heart(heart_count):
+    """Set the heart count while the app is running."""
+    return warm_send_json({"heart": heart_count})
+
+def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None, heart=None):
     """Set a combined payload while the app is running."""
     payload = {}
     if level is not None: payload["level"] = level
@@ -115,6 +128,7 @@ def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=N
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
     if playspeed is not None: payload["playspeed"] = playspeed
+    if heart is not None: payload["heart"] = heart
     return warm_send_json(payload) if payload else False
 
 def set_system_time(datetime_str: str):

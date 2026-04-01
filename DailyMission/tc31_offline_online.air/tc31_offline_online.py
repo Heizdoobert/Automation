@@ -28,11 +28,7 @@ setting = SettingPage()
 
 def main():
     try:
-<<<<<<< HEAD
-        open_app_with_fake_ads(cheat, home_page, ads)
-=======
         open_app_with_fake_ads(home_page)
->>>>>>> 7fe6c15 (Update with new adb func)
         wrapper.log_info("=== TC31: Offline -> online ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         serial = G.DEVICE.serialno

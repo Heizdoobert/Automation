@@ -14,10 +14,6 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
 from pixon.pages.setting_page import SettingPage
-<<<<<<< HEAD
-from pixon.pages.lucky_spin import LuckySpinPage
-=======
->>>>>>> 7fe6c15 (Update with new adb func)
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
 auto_setup(__file__)
@@ -34,19 +30,11 @@ lucky = LuckySpinPage()
 
 def main():
     try:
-<<<<<<< HEAD
-        open_app_with_fake_ads(cheat, home_page, ads)
-        wrapper.log_info("=== TC26: EXP milestone 100 ===")
-        setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        for _ in range(5):
-            execute_mission_action(game, cheat, daily, home_page, ads, lucky, "complete_levels", 3)
-=======
         open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC26: EXP milestone 100 ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         for _ in range(5):
             execute_mission_action(game, cheat,daily, home_page, lucky, "complete_levels", 3)
->>>>>>> 7fe6c15 (Update with new adb func)
             sleep(1)
         daily.claim_exp_reward(100)
         sleep(1)

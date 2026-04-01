@@ -10,14 +10,8 @@ from pixon.pages.setting_page import SettingPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
-<<<<<<< HEAD
-from pixon.adb_utils import (cold_start_with_combined, cold_start_with_level,
-                       set_level, set_coin, set_booster, set_fake_ads,
-                       set_autorotate, set_autoplay, set_playspeed)
-=======
 from pixon.adb_utils import (cold_start_with_combined, cold_start_with_level, set_combined,
                        set_level, set_coin, set_booster, set_system_time)
->>>>>>> 7fe6c15 (Update with new adb func)
 
 package_name = "com.woodpuzzle.pin3d"
 DEFAULT_TARGET_LEVEL = 11
@@ -28,7 +22,7 @@ LEVEL_WAIT_TIMEOUT = 300
 
 
 # ==================== UI HELPERS ====================
-def open_app_with_fake_ads(cheat: CheatPage, home: HomePage, ads: RemoveAds) -> None:
+def open_app_with_fake_ads(home: HomePage) -> None:
     """Setup app with fake ads on.
 
     Args:
@@ -36,7 +30,7 @@ def open_app_with_fake_ads(cheat: CheatPage, home: HomePage, ads: RemoveAds) -> 
         home (HomePage): Checking home
         ads (RemoveAds): Setup fake ads
     """
-    cold_start_with_combined(fakeads=True)
+    cold_start_with_combined(fakeads=True, heart=5, level=3, booster={"drill": 20, "hammer": 20, "magnet": 20}, coin=5000)
     sleep(20)
     close_all_popups(home)
 
@@ -128,11 +122,10 @@ def _wait_for_splash_and_enter_game(home: HomePage, game: GamePage) -> int:
     close_all_popups(home)
     return _enter_game_and_get_level(home, game)
 
-def _autoplay_to_level(cheat: CheatPage, game: GamePage, target_level: int, timeout: int = LEVEL_WAIT_TIMEOUT) -> None:
+def _autoplay_to_level(game: GamePage, target_level: int, timeout: int = LEVEL_WAIT_TIMEOUT) -> None:
     """Run autoplay until the target level is reached.
 
     Args:
-        cheat (CheatPage): CheatPage instance to control autoplay
         game (GamePage): GamePage instance to get the current level
         target_level (int): The target level to reach
         timeout (int, optional): Maximum time in seconds to wait for the target level. Defaults to LEVEL_WAIT_TIMEOUT.
@@ -140,16 +133,12 @@ def _autoplay_to_level(cheat: CheatPage, game: GamePage, target_level: int, time
     Raises:
         AssertionError: If the target level is not reached within the timeout.
     """
-    cheat.open_cheat()
-    cheat.auto_play_on()
-    cheat.close_cheat()
+    set_combined(autoplay=True, playspeed=2)
     start = time.time()
     while time.time() - start < timeout:
         current_lv = game.get_current_level()
         if current_lv >= target_level:
-            cheat.open_cheat()
-            cheat.auto_play_off()
-            cheat.close_cheat()
+            set_combined(autoplay=False, playspeed=1)
             wrapper.log_info(f"Autoplay reached level {target_level}")
             return
         sleep(5)
@@ -199,7 +188,6 @@ import subprocess
 
 def setup_fresh_install(
     home: HomePage,
-    cheat: CheatPage,
     game: GamePage,
     setting: SettingPage,
 ) -> None:
@@ -223,11 +211,8 @@ def setup_fresh_install(
 
 def reset_progress(
     home: HomePage,
-    setting: SettingPage,
     cheat: CheatPage,
-    game: GamePage,
     target_level: int = DEFAULT_TARGET_LEVEL,
-    wait: int = 15,
 ) -> None:
     """Reset game progress and set up to a target level.
 
@@ -240,45 +225,34 @@ def reset_progress(
         wait (int, optional): Time in seconds to wait after deleting progress. Defaults to 15.
     """
     go_home_clean(home)
-    # Clear app data via ADB instead of using the UI
     wrapper.log_info("Clearing app data via ADB")
     subprocess.run(["adb", "shell", "pm", "clear", package_name], check=True)
-    # After clearing data, we need to start the app and wait for it to be at home
     wrapper.log_info("Starting app via ADB")
     try:
-        # Start the main activity
         subprocess.run(["adb", "shell", "am", "start", "-n", f"{package_name}/com.pixon.studio.CustomUnityActivity"], check=True)
     except Exception as e:
         wrapper.log_warning(f"Failed to start main activity: {e}")
-        # Fallback to monkey
         subprocess.run(["adb", "shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1"], check=True)
-    # Wait for the app to be at home - increased wait time
     wrapper.log_info("Waiting for app to start...")
-    sleep(30)  # Increased initial wait
-    # Now we should be at the home screen? Not necessarily, we might be at the splash screen.
-    # We can use the home page to wait for the home icon.
+    sleep(30)
     wrapper.log_info("Checking if app reached home screen...")
-    # Wait up to 90 seconds for the app to reach home screen (checking multiple indicators)
-    for i in range(18):  # 18 * 5 seconds = 90 seconds
+    for i in range(18):
         if home.is_at_home():
             wrapper.log_info(f"App reached home screen after {(i+1)*5} seconds")
             break
         wrapper.log_info(f"Waiting for home screen... (attempt {i+1}/18)")
         sleep(5)
     else:
-        # If we get here, we didn't reach home screen in 90 seconds
         wrapper.log_error("App did not reach home screen after 90 seconds")
-        # Take a screenshot for debugging
         try:
             home.take_screenshot("app_start_debug.png")
             wrapper.log_info("Took screenshot for debugging: app_start_debug.png")
         except Exception as e:
             wrapper.log_warning(f"Failed to take screenshot: {e}")
         raise AssertionError("App did not start or did not reach home screen after clearing data")
-    # Now we are at home, we can proceed with the original steps after delete_progress
-    _set_level_and_win(cheat, home, 3)   # Get to a known state (level 3) and home
-    set_level(target_level)               # Set the level for the next game
-    go_home_clean(home)                   # Ensure we are at home
+    _set_level_and_win(cheat, home, 3)
+    set_level(target_level)
+    go_home_clean(home)
 
 def cold_start_unlock_daily_mission(
     home: HomePage,
@@ -330,7 +304,6 @@ def execute_mission_action(
     cheat: CheatPage,
     daily: DailyMissionPage,
     home_page: HomePage,
-    ads: RemoveAds,
     lucky_spin: LuckySpinPage,
     mission_type: str,
     value: int,
@@ -366,11 +339,11 @@ def execute_mission_action(
         game.spend_coins(value)
     elif mission_type == "collect_nails_red":
         set_level(game.get_current_level() + (value // 10))
-        game.collect_nails("red", value)
+        _autoplay_to_level(game, game.get_current_level() + (value // 10))
         go_home_clean(home_page)
     elif mission_type == "collect_nails_blue":
         set_level(game.get_current_level() + (value // 10))
-        game.collect_nails("blue", value)
+        _autoplay_to_level(game, game.get_current_level() + (value // 10))
         go_home_clean(home_page)
     elif mission_type == "lucky_spin":
         lucky_spin.roll_out()
@@ -380,8 +353,9 @@ def execute_mission_action(
         pass
     elif mission_type == "complete_levels_kill":
         target_level = game.get_current_level() + value
-        _advance_levels(cheat, game, home_page, daily, target_level)
-        open_app_with_fake_ads(cheat, home_page, ads)
+        _autoplay_to_level(game, target_level)
+        teardown_app()
+        open_app_with_fake_ads(home_page)
     else:
         wrapper.log_warning(f"Unknown mission type: {mission_type}")
 
@@ -399,9 +373,6 @@ def check_lucky(lucky: LuckySpinPage) -> bool:
     if wrapper.wait_not_exists(lucky.label_lucky_spin, timeout=5, interval=1):
         return True
     return False
-<<<<<<< HEAD
-=======
 
 def wait_for_next_day(time: int) -> None:
     set_system_time("24*3600*{int}")
->>>>>>> 7fe6c15 (Update with new adb func)

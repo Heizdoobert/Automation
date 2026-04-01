@@ -13,7 +13,6 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
     setup_fresh_install, teardown_app, open_app_with_fake_ads,
@@ -28,16 +27,15 @@ home_page = HomePage()
 cheat     = CheatPage()
 game      = GamePage()
 daily     = DailyMissionPage()
-ads       = RemoveAds()
 setting   = SettingPage()
 
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC03: Fresh install — popup tutorial after unlock ===")
 
-        setup_fresh_install(home_page, cheat, game, setting)
+        setup_fresh_install(home_page, game, setting)
 
         wrapper.log_info("Setting level to 11 and winning to trigger unlock...")
         _set_level_and_win(cheat, home_page, 11)
