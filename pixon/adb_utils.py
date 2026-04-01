@@ -53,12 +53,20 @@ def cold_start_with_booster(booster_dict):
 def cold_start_with_fake_ads(enabled):
     return cold_start_with_json({"fakeads": enabled})
 
-def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None):
+def cold_start_with_autorotate(enabeld):
+    return cold_start_with_json({"autorotate": enabeld})
+
+def cold_start_with_autoplay_and_play_speed(enabled):
+    return cold_start_with_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
+
+def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None):
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
     if booster is not None: payload["booster"] = booster
     if fakeads is not None: payload["fakeads"] = fakeads
+    if autorotate is not None: payload["autorotate"] = autorotate
+    if autoplay is not None: payload["autoplay"] = autoplay
     return cold_start_with_json(payload) if payload else False
 
 def set_level(level):
@@ -73,10 +81,23 @@ def set_booster(booster_dict):
 def set_fake_ads(enabled):
     return warm_send_json({"fakeads": enabled})
 
-def set_combined(level=None, coin=None, booster=None, fakeads=None):
+def set_autorotate(enabled):
+    return warm_send_json({"autorotate": enabled})
+
+def set_autoplay_and_play_speed(enabled):
+    return warm_send_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
+
+def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None):
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
     if booster is not None: payload["booster"] = booster
     if fakeads is not None: payload["fakeads"] = fakeads
+    if autorotate is not None: payload["autorotate"] = autorotate
+    if autoplay is not None: payload["autoplay"] = autoplay
     return warm_send_json(payload) if payload else False
+
+def set_system_time(datetime_str: str):
+    """Set system time (requires emulator or root)."""
+    subprocess.run(f"adb shell settings put global auto_time 0", shell=True)
+    subprocess.run(f"adb shell date -s \"{datetime_str}\"", shell=True)

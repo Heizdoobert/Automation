@@ -28,16 +28,15 @@ home_page = HomePage()
 cheat     = CheatPage()
 game      = GamePage()
 daily     = DailyMissionPage()
-ads       = RemoveAds()
 setting   = SettingPage()
 
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC02: Check Daily Mission icon before and after unlock ===")
 
-        reset_progress(home_page, setting, cheat, game, target_level=7, wait=15)
+        reset_progress(home_page, setting, game, target_level=7, wait=15)
 
         go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
@@ -45,7 +44,7 @@ def main():
         wrapper.log_info("PASS: No icon at level 7")
 
         wrapper.log_info("Setting level to 10 via ADB and winning...")
-        _set_level_and_win(cheat, 10)
+        _set_level_and_win(cheat, home_page, 10)
         go_home_clean(home_page)
 
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
@@ -53,7 +52,7 @@ def main():
         wrapper.log_info("PASS: No icon after winning level 10")
 
         wrapper.log_info("Setting level to 11 via ADB and winning...")
-        _set_level_and_win(cheat, 11)
+        _set_level_and_win(cheat, home_page, 11)
         go_home_clean(home_page)
 
         if not daily.wait_for_element(daily.btn_daily_mission, timeout=5):
