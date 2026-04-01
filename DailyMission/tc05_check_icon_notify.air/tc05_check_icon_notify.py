@@ -29,9 +29,9 @@ setting = SettingPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC05: Check notify on icon before joining ===")
-        reset_progress(home_page, setting, cheat, game, target_level=11, wait=15)
+        reset_progress(home_page, setting, game, target_level=11, wait=15)
         if not daily.is_notify_visible():
             raise AssertionError("Notify not visible on icon")
         wrapper.log_info("PASS: Notify visible")
