@@ -12,7 +12,6 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, open_app_with_fake_ads
 
@@ -24,12 +23,11 @@ home_page = HomePage()
 cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
-ads = RemoveAds()
 setting = SettingPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC07: Check random 5 missions per day ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
@@ -38,7 +36,6 @@ def main():
         if count_a != 5:
             for i in range(count_b):
                 daily.claim_mission(i)
-            # Close and reopen popup to refresh UI state after claiming
             daily.tap(daily.btn_close)
             sleep(2)
             daily.open_daily_mission_popup()

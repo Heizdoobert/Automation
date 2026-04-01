@@ -10,7 +10,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
 from pixon.adb_utils import (cold_start_with_combined, cold_start_with_level, set_combined,
-                       set_level, set_coin, set_booster)
+                       set_level, set_coin, set_booster, set_system_time)
 
 package_name = "com.woodpuzzle.pin3d"
 DEFAULT_TARGET_LEVEL = 11
@@ -214,3 +214,6 @@ def check_lucky(lucky: LuckySpinPage) -> bool:
     if wrapper.wait_not_exists(lucky.label_lucky_spin, timeout=5, interval=1):
         return True
     return False
+
+def wait_for_next_day(time: int) -> None:
+    set_system_time("24*3600*{int}")

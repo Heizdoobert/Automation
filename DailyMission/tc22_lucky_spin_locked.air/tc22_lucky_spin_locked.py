@@ -13,10 +13,9 @@ from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from pixon.pages.lucky_spin import LuckySpinPage
-from DailyMission.conftest_daily import setup_with_level, teardown_app
+from DailyMission.conftest_daily import teardown_app, open_app_with_fake_ads, setup_fresh_install
 
 auto_setup(__file__)
 
@@ -27,15 +26,14 @@ cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
 lucky = LuckySpinPage()
-ads = RemoveAds()
 setting = SettingPage()
 lucky = LuckySpinPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC22: Lucky spin not unlocked but mission exists ===")
-        setup_with_level(home_page, cheat, game, 5)
+        setup_fresh_install(home_page, game, setting)
         if not wrapper.wait_not_exists(lucky.label_lucky_spin):
             return AssertionError("Lucky Spin showing too late")
         wrapper.log_info("PASS: Mission displayed (manual check required)")

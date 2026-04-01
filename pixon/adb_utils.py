@@ -101,3 +101,7 @@ def set_system_time(datetime_str: str):
     """Set system time (requires emulator or root)."""
     subprocess.run(f"adb shell settings put global auto_time 0", shell=True)
     subprocess.run(f"adb shell date -s \"{datetime_str}\"", shell=True)
+    
+def set_system_timezone(timezone_str: str):
+    """Set system timezone (requires emulator or root)."""
+    subprocess.run(f"adb shell settings put global timezone {timezone_str}", shell=True)
