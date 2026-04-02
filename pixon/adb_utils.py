@@ -53,16 +53,21 @@ def cold_start_with_booster(booster_dict):
 def cold_start_with_fake_ads(enabled):
     return cold_start_with_json({"fakeads": enabled})
 
-def cold_start_with_autorotate(enabeld):
-    return cold_start_with_json({"autorotate": enabeld})
+def cold_start_with_autorotate(enabled):
+    return cold_start_with_json({"autorotate": enabled})
 
-def cold_start_with_autoplay_and_play_speed(enabled):
-    return cold_start_with_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
-
-def cold_start_with_heart(heart):
-    return cold_start_with_json({"heart": heart})
-
-def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, heart=None):
+def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None):
+    """Cold start with comprehensive payload support.
+    
+    Args:
+        level (int, optional): Set absolute level (min=1)
+        coin (int, optional): Set absolute coin amount
+        booster (dict, optional): Set booster counts by name
+        fakeads (bool, optional): Enable/disable fake ads mode
+        autorotate (bool, optional): Enable/disable auto-rotation
+        autoplay (bool, optional): Enable/disable AutoAgent
+        playspeed (int, optional): Set game time scale (1, 2, 4, etc.)
+    """
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
@@ -70,7 +75,7 @@ def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, 
     if fakeads is not None: payload["fakeads"] = fakeads
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
-    if heart is not None: payload["heart"] = heart
+    if playspeed is not None: payload["playspeed"] = playspeed
     return cold_start_with_json(payload) if payload else False
 
 def set_level(level):
@@ -86,15 +91,29 @@ def set_fake_ads(enabled):
     return warm_send_json({"fakeads": enabled})
 
 def set_autorotate(enabled):
+    """Enable/disable auto-rotation."""
     return warm_send_json({"autorotate": enabled})
 
-def set_autoplay_and_play_speed(enabled):
-    return warm_send_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
+def set_autoplay(enabled):
+    """Enable/disable AutoAgent for automated gameplay actions."""
+    return warm_send_json({"autoplay": enabled})
 
-def set_heart(heart):
-    return warm_send_json({"heart": heart})
+def set_playspeed(speed):
+    """Set game time scale (1, 2, 4, etc.)."""
+    return warm_send_json({"playspeed": speed})
 
-def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, heart=None):
+def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None):
+    """Set combined payload with all supported keys.
+    
+    Args:
+        level (int, optional): Set absolute level (min=1)
+        coin (int, optional): Set absolute coin amount
+        booster (dict, optional): Set booster counts by name
+        fakeads (bool, optional): Enable/disable fake ads mode
+        autorotate (bool, optional): Enable/disable auto-rotation
+        autoplay (bool, optional): Enable/disable AutoAgent
+        playspeed (int, optional): Set game time scale (1, 2, 4, etc.)
+    """
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
@@ -102,7 +121,7 @@ def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=N
     if fakeads is not None: payload["fakeads"] = fakeads
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
-    if heart is not None: payload["heart"] = heart
+    if playspeed is not None: payload["playspeed"] = playspeed
     return warm_send_json(payload) if payload else False
 
 def set_system_time(datetime_str: str):
