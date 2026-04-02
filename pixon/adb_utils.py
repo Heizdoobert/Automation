@@ -53,9 +53,6 @@ def cold_start_with_booster(booster_dict):
 def cold_start_with_fake_ads(enabled):
     return cold_start_with_json({"fakeads": enabled})
 
-def cold_start_with_autorotate(enabled):
-    return cold_start_with_json({"autorotate": enabled})
-
 def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, playspeed=None):
     """Cold start with comprehensive payload support.
     
@@ -123,12 +120,3 @@ def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=N
     if autoplay is not None: payload["autoplay"] = autoplay
     if playspeed is not None: payload["playspeed"] = playspeed
     return warm_send_json(payload) if payload else False
-
-def set_system_time(datetime_str: str):
-    """Set system time (requires emulator or root)."""
-    subprocess.run(f"adb shell settings put global auto_time 0", shell=True)
-    subprocess.run(f"adb shell date -s \"{datetime_str}\"", shell=True)
-    
-def set_system_timezone(timezone_str: str):
-    """Set system timezone (requires emulator or root)."""
-    subprocess.run(f"adb shell settings put global timezone {timezone_str}", shell=True)

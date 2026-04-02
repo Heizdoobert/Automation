@@ -318,7 +318,7 @@ def retry(times=3, delay=0.5, exceptions=(Exception,), failure_values=(None,)):
 def default_img_setup(img):
     if isinstance(img, Template):
         img.rgb = True
-        img.threshold = 0.55
+        img.threshold = 0.5
         if not img.record_pos:
             img.record_pos = ()
         if not img.resolution:

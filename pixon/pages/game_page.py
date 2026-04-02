@@ -40,14 +40,6 @@ class GamePage(BasePage):
         return (0, 0, w, int(120 * h / 1280))
 
     def get_current_level(self) -> int:
-        def _on_retry(name, attempt, exc):
-            msg = (
-                f"get_current_level retry {attempt}: {exc}"
-                if exc
-                else f"get_current_level retry {attempt}: no result"
-            )
-            wrapper.log_info(msg)
-
         @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()
@@ -67,11 +59,10 @@ class GamePage(BasePage):
             return None
 
         result = _attempt()
-        if result:
+        if result is not None:
             wrapper.log_info(f"get_current_level: detected level {result}")
             return result
-        wrapper.log_error("get_current_level: failed after all attempts, returning 0")
-        return 0
+        raise RuntimeError("get_current_level: failed after all attempts, unable to detect level")
 
     def activate_boosters(self) -> None:
         for i in range(len(self.booster)):
@@ -83,9 +74,16 @@ class GamePage(BasePage):
                     wrapper.log_info(f"Booster {i+1} ran out — buying with coin")
                     self.tap(self.pay_coin[i])
                     sleep(3)
+                    wrapper.log_info(f"Center coordinates: {self.CENTER}")
                     self.tap(self.CENTER)
+                    sleep(2)
                 else:
                     wrapper.log_info(f"Booster {i+1} available — no need to buy")
+                    wrapper.log_info(f"Center coordinates: {self.CENTER}")
+                    self.tap(self.CENTER)
+                    sleep(2)
+            else:
+                wrapper.log_warning(f"Booster {i+1} not found on screen")
 
     def _activate_single_booster(self, index: int) -> None:
         sleep(2)
@@ -97,8 +95,11 @@ class GamePage(BasePage):
                 self.tap(self.pay_coin[index])
                 sleep(3)
                 self.tap(self.CENTER)
+                sleep(2)
             else:
                 wrapper.log_info(f"Booster {index+1} available — no need to buy")
+                self.tap(self.CENTER)
+                sleep(2)
         else:
             wrapper.log_warning(f"Booster {index+1} not found on screen")
 
@@ -118,6 +119,11 @@ class GamePage(BasePage):
 
     def spend_coins(self, amount: int) -> None:
         wrapper.log_info(f"spend_coins: amount={amount} — not implemented")
+        times = (amount + 99) // 100
+        if times <= 0:
+            times = 1
+        wrapper.log_info(f"spend_coins: will activate boosters {times} time(s)")
+        self.use_booster("any", times)
 
     def collect_nails(self, color: str, count: int) -> None:
         wrapper.log_info(f"collect_nails: color={color}, count={count} — not implemented")

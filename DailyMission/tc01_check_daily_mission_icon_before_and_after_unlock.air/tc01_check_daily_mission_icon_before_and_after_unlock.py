@@ -22,6 +22,15 @@ from DailyMission.conftest_daily import (
 
 auto_setup(__file__)
 
+# Add device connection check
+from airtest.core.api import connect_device
+from airtest.core.error import NoDeviceError
+
+# Try to connect to any available device
+G.DEVICE.connect()
+if not G.device:
+    raise RuntimeError("No devices available. Please connect your Android device or check ADB connection.")
+
 package_name = "com.woodpuzzle.pin3d"
 
 home_page = HomePage()
@@ -37,10 +46,11 @@ def main():
         open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC01, TC02: Check Daily Mission icon before and after unlock ===")
 
-        reset_progress(home_page, setting, game, target_level=7, wait=15)
+        wrapper.log_info("Setting level to 7 via ADB and winning...")
+        _set_level_and_win(cheat, home_page, 7)
+        go_home_clean(home_page)
 
         wrapper.log_info("Checking at level 7...")
-        go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
             raise AssertionError("Daily Mission icon appeared at level 7!")
         wrapper.log_info("PASS: No icon at level 7")
