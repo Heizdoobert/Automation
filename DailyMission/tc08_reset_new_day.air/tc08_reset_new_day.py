@@ -12,7 +12,6 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
     setup_unlocked_daily_mission,
@@ -29,17 +28,15 @@ home_page = HomePage()
 cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
-ads = RemoveAds()
 setting = SettingPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC08: Reset missions when day changes ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        wait_for_next_day(cheat)
+        wait_for_next_day(1)
         daily.open_daily_mission_popup()
-        # Get missions list
         exp = daily.get_collect_mission_count()
         if exp != None:
             daily.claim_mission(exp)

@@ -12,7 +12,6 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from pixon.pages.lucky_spin import LuckySpinPage
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
@@ -25,17 +24,16 @@ home_page = HomePage()
 cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
-ads = RemoveAds()
 setting = SettingPage()
 lucky_spin = LuckySpinPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC20: Collect 50 blue nails ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
-        execute_mission_action(game, cheat,daily, home_page, ads,lucky_spin, "collect_nails_blue", 50)
+        execute_mission_action(game, cheat,daily, home_page, lucky_spin, "collect_nails_blue", 50)
         daily.open_daily_mission_popup()
         if not daily.wait_for_element(daily.btn_collect, timeout=5):
             raise AssertionError("Mission not marked as complete")
