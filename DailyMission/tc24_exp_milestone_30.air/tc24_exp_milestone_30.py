@@ -29,11 +29,10 @@ lucky = LuckySpinPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page,ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC24: EXP milestone 30 ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        daily.open_daily_mission_popup()
-        execute_mission_action(game, cheat,daily, home_page, ads, lucky, "complete_levels", 5)
+        execute_mission_action(game, cheat,daily, home_page, lucky, "complete_levels", 3)
         sleep(2)
         daily.open_daily_mission_popup()
         daily.claim_exp_reward(30)

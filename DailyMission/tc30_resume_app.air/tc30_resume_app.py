@@ -13,8 +13,8 @@ from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
-from pixon.pages.setting_page import SettingPage
 from pixon.pages.lucky_spin import LuckySpinPage
+from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
 auto_setup(__file__)
@@ -26,15 +26,16 @@ cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
 lucky = LuckySpinPage()
+lucky = LuckySpinPage()
 setting = SettingPage()
 lucky = LuckySpinPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC30: Resume app after multitasking ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        execute_mission_action(game, cheat, daily, home_page, ads, lucky, "complete_levels", 3)
+        execute_mission_action(game, cheat,daily, home_page, lucky, "complete_levels", 3)
         exp_before = daily.get_exp_progress()
         keyevent("HOME")
         sleep(2)

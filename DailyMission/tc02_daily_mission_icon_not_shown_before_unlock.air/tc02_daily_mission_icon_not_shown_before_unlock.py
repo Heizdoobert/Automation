@@ -13,7 +13,6 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
     reset_progress, teardown_app, open_app_with_fake_ads,
@@ -25,11 +24,6 @@ auto_setup(__file__)
 # Add device connection check
 from airtest.core.api import connect_device
 from airtest.core.error import NoDeviceError
-
-# Try to connect to any available device
-G.DEVICE.connect()
-if not G.device:
-    raise RuntimeError("No devices available. Please connect your Android device or check ADB connection.")
 
 package_name = "com.woodpuzzle.pin3d"
 
@@ -43,9 +37,10 @@ setting   = SettingPage()
 def main():
     try:
         open_app_with_fake_ads(home_page)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC02: Check Daily Mission icon before and after unlock ===")
 
-        reset_progress(home_page, setting, game, target_level=7, wait=15)
+        reset_progress(home_page, cheat, target_level=7)
 
         go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
