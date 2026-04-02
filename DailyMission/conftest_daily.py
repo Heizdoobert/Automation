@@ -22,7 +22,7 @@ LEVEL_WAIT_TIMEOUT = 300
 
 # ==================== UI HELPERS ====================
 def open_app_with_fake_ads(home: HomePage) -> None:
-    cold_start_with_combined(fakeads=True)
+    cold_start_with_combined(fakeads=True, heart=5)
     close_all_popups(home)
 
 def close_all_popups(home: HomePage, repeat: int = 5) -> None:

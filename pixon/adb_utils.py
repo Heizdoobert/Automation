@@ -59,7 +59,10 @@ def cold_start_with_autorotate(enabeld):
 def cold_start_with_autoplay_and_play_speed(enabled):
     return cold_start_with_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
 
-def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None):
+def cold_start_with_heart(heart):
+    return cold_start_with_json({"heart": heart})
+
+def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, heart=None):
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
@@ -67,6 +70,7 @@ def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None, 
     if fakeads is not None: payload["fakeads"] = fakeads
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
+    if heart is not None: payload["heart"] = heart
     return cold_start_with_json(payload) if payload else False
 
 def set_level(level):
@@ -87,7 +91,10 @@ def set_autorotate(enabled):
 def set_autoplay_and_play_speed(enabled):
     return warm_send_json({"autoplay": enabled, "playspeed": 2 if enabled else 1})
 
-def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None):
+def set_heart(heart):
+    return warm_send_json({"heart": heart})
+
+def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=None, autoplay=None, heart=None):
     payload = {}
     if level is not None: payload["level"] = level
     if coin is not None: payload["coin"] = coin
@@ -95,6 +102,7 @@ def set_combined(level=None, coin=None, booster=None, fakeads=None, autorotate=N
     if fakeads is not None: payload["fakeads"] = fakeads
     if autorotate is not None: payload["autorotate"] = autorotate
     if autoplay is not None: payload["autoplay"] = autoplay
+    if heart is not None: payload["heart"] = heart
     return warm_send_json(payload) if payload else False
 
 def set_system_time(datetime_str: str):
