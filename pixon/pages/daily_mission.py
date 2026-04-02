@@ -155,3 +155,6 @@ class DailyMissionPage(BasePage):
         screen = wrapper.get_screen()
         pos = template.match_all_in(screen)
         return pos if pos else []
+    
+    def click_tap_to_continued(self) -> None:
+        self.tap(self.tap_to_continue)

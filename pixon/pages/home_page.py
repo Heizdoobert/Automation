@@ -1,12 +1,22 @@
 # pages/home_page.py
 from pixon.common.base_page import BasePage
 from pathlib import Path
-from airtest.core.api import Template, sleep
+from airtest.core.api import Template, sleep, touch, keyevent, G, start_app, exists
 import pixon.pixonwrapper as wrapper
+import subprocess
+import time
 
 IMAGE_DIR = Path(__file__).resolve().parent / "images"
+PACKAGE_NAME = "com.woodpuzzle.pin3d"
 
-def get_template(relative_path, record_pos, resolution=(720, 1280)):
+def get_template(relative_path, record_pos, resolution=None):
+    if resolution is None:
+        try:
+            w = G.DEVICE.display_info['width']
+            h = G.DEVICE.display_info['height']
+            resolution = (w, h)
+        except Exception:
+            resolution = (720, 1280)
     return Template(str(IMAGE_DIR / relative_path), record_pos=record_pos, resolution=resolution)
 
 
@@ -14,10 +24,12 @@ class HomePage(BasePage):
 
     splash_screen_icon = get_template("splash_screen_icon.png",  ( 0.051, -0.164))
     splash_home_icon   = get_template("label_main_home.png",     (-0.006,  0.792))
+    splash_home_icon.threshold = 0.5
     main_home_btn      = get_template("home_page/btn_main_home.png", ( 0.001,  0.794))
     main_play_btn      = get_template("home_page/btn_play.png",      ( 0.003,  0.497))
     btn_lucky_spin     = get_template("home_page/btn_lucky_spin.png",     (-0.401, -0.364))
     btn_setting        = get_template("system_function/btn_setting.png",  ( 0.425, -0.811))
+    btn_setting.threshold = 0.5
     btn_home           = get_template("system_function/btn_home.png",     (-0.01,   0.357))
     btn_close          = get_template("system_function/btn_close.png",    ( 0.365, -0.861))
     btn_tutorial       = get_template("system_function/btn_tutorial.png", (-0.415, -0.799))
@@ -26,9 +38,17 @@ class HomePage(BasePage):
     label_setting      = get_template("settings_page/label_setting.png",  ( 0.003, -0.594))
 
     def is_at_home(self) -> bool:
-        result = self.wait_for_element(self.splash_home_icon, timeout=2)
-        self.log_step(f"Check splash_home_icon: {result is not None}")
-        return bool(result)
+        # Check for home indicators for up to 10 seconds, checking every 0.5 seconds
+        end_time = time.time() + 10
+        while time.time() < end_time:
+            if (exists(self.splash_home_icon) or
+                exists(self.main_home_btn) or
+                exists(self.main_play_btn)):
+                self.log_step("At home detected")
+                return True
+            sleep(0.5)
+        self.log_step("Not at home after 10 seconds")
+        return False
 
     def _is_screen_dark(self) -> bool:
         import pixon.pixonwrapper as _w
@@ -40,42 +60,48 @@ class HomePage(BasePage):
             wrapper.log_warning(f"_is_screen_dark: brightness={mean_brightness:.1f} — screen too dark to navigate")
         return is_dark
 
-    def go_home(self, force: bool = False, retries: int = 3) -> bool:
-        for attempt in range(retries):
-            if not force and self.is_at_home():
-                wrapper.log_info("go_home: already at home — skip navigation")
-                return True
-            if self._is_screen_dark():
-                wrapper.log_warning(f"go_home attempt {attempt+1}: screen dark — waiting 2s before retry")
-                sleep(2)
-                continue
-
-            self.tap(self.btn_setting)
-            sleep(1)
-            if not self.wait_for_element(self.label_setting, timeout=5):
-                wrapper.log_warning(f"go_home attempt {attempt+1}: settings panel did not open — retrying")
-                sleep(2)
-                continue
-
-            if not self.wait_for_element(self.btn_home, timeout=5):
-                wrapper.log_warning(f"go_home attempt {attempt+1}: btn_home not found — closing settings and retrying")
-                self.tap(self.btn_close)
-                sleep(2)
-                continue
-
-            self.tap(self.btn_home)
-            sleep(1)
-            if self.wait_for_element(self.splash_home_icon, timeout=5):
-                return True
-
-            sleep(1)
-            self.tap(self.btn_home)
-            if self.wait_for_element(self.splash_home_icon, timeout=8):
-                return True
-
-            wrapper.log_warning(f"go_home attempt {attempt+1}: splash_home_icon not found after two taps")
+    def go_home(self, force: bool = False) -> bool:
+        if not force and self.is_at_home():
+            wrapper.log_info("go_home: already at home — skip navigation")
+            return True
+        if self._is_screen_dark():
+            wrapper.log_warning(f"go_home: screen dark — waiting 2s before retry")
             sleep(2)
+            if self.is_at_home():
+                return True
 
+        # Try home button
+        wrapper.log_info("go_home: trying home button approach")
+        for i in range(10):
+            keyevent("HOME")
+            sleep(1)
+            if self.is_at_home():
+                wrapper.log_info(f"go_home: home button approach worked after {i+1} presses")
+                return True
+        wrapper.log_warning("go_home: home button approach failed after 10 presses")
+
+        # Try back button
+        wrapper.log_info("go_home: trying back button approach")
+        for i in range(10):
+            keyevent("BACK")
+            sleep(1)
+            if self.is_at_home():
+                wrapper.log_info(f"go_home: back button approach worked after {i+1} presses")
+                return True
+        wrapper.log_warning("go_home: back button approach failed after 10 presses")
+
+        # Try to start the app
+        wrapper.log_info("go_home: trying to start app via ADB")
+        try:
+            start_app(PACKAGE_NAME)
+            sleep(10)
+            if self.is_at_home():
+                wrapper.log_info("go_home: starting app via ADB worked")
+                return True
+        except Exception as e:
+            wrapper.log_warning(f"go_home: failed to start app via ADB: {e}")
+
+        wrapper.log_warning("go_home: all approaches failed")
         return False
 
     def click_play(self) -> None:

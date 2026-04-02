@@ -44,4 +44,4 @@ identity/
 environment/
 agents/
 DailyMission.xlsx
-openclaw_agent.py
+.openclaw/
