@@ -12,10 +12,9 @@ from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from pixon.pages.lucky_spin import LuckySpinPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app
+from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
 auto_setup(__file__)
 
@@ -25,16 +24,15 @@ home_page = HomePage()
 cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
-ads = RemoveAds()
 setting = SettingPage()
 lucky = LuckySpinPage()
 
 def main():
     try:
-        wrapper.launch_app_wait_load_done(package_name, home_page.splash_screen_icon)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC15: Spend 100,500,1000 coins ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        execute_mission_action(game, cheat,daily, home_page, ads, lucky, "spend_coins", 100)
+        execute_mission_action(game, cheat,daily, home_page, lucky, "spend_coins", 100)
         daily.open_daily_mission_popup()
         wrapper.log_info("PASS: Spent 100 coins")
         wrapper.log_info("=== TC15 PASSED ===")

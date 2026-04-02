@@ -43,7 +43,7 @@ setting   = SettingPage()
 
 def main():
     try:
-        open_app_with_fake_ads(cheat, home_page, ads)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC01, TC02: Check Daily Mission icon before and after unlock ===")
 
         wrapper.log_info("Setting level to 7 via ADB and winning...")
