@@ -210,8 +210,7 @@ def setup_fresh_install(
 
 def reset_progress(
     home: HomePage,
-    setting: SettingPage,
-    game: GamePage,
+    cheat: CheatPage,
     target_level: int = DEFAULT_TARGET_LEVEL,
 ) -> None:
     """Reset game progress and set up to a target level.
@@ -250,7 +249,7 @@ def reset_progress(
         except Exception as e:
             wrapper.log_warning(f"Failed to take screenshot: {e}")
         raise AssertionError("App did not start or did not reach home screen after clearing data")
-    _set_level_and_win(cheat, home, 3)
+    _set_level_and_win(cheat,home, 3)
     set_level(target_level)
     go_home_clean(home)
 
