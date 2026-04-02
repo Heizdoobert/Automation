@@ -37,6 +37,7 @@ setting   = SettingPage()
 def main():
     try:
         open_app_with_fake_ads(home_page)
+        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC02: Check Daily Mission icon before and after unlock ===")
 
         reset_progress(home_page, cheat, target_level=7)

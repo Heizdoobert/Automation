@@ -13,6 +13,7 @@ from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
+from pixon.pages.lucky_spin import LuckySpinPage
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import setup_unlocked_daily_mission, execute_mission_action, teardown_app, open_app_with_fake_ads
 
@@ -24,6 +25,7 @@ home_page = HomePage()
 cheat = CheatPage()
 game = GamePage()
 daily = DailyMissionPage()
+lucky = LuckySpinPage()
 lucky = LuckySpinPage()
 setting = SettingPage()
 lucky = LuckySpinPage()

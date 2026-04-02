@@ -5,7 +5,6 @@ from airtest.core.api import exists, sleep, stop_app
 import pixon.pixonwrapper as wrapper
 from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
-from pixon.pages.remove_ads import RemoveAds
 from pixon.pages.setting_page import SettingPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
@@ -138,7 +137,7 @@ def _autoplay_to_level(game: GamePage, target_level: int, timeout: int = LEVEL_W
     while time.time() - start < timeout:
         current_lv = game.get_current_level()
         if current_lv >= target_level:
-            set_combined(autoplay=False, playspeed=1)
+            set_combined(autoplay=False)
             wrapper.log_info(f"Autoplay reached level {target_level}")
             return
         sleep(5)
@@ -202,7 +201,7 @@ def setup_fresh_install(
     go_home_clean(home)
     setting.delete_progress(assume_at_home=True)
     _wait_for_splash_and_enter_game(home, game)
-    set_level(3)
+    _autoplay_to_level(game, 3)
     sleep(1)
     set_level(DEFAULT_TARGET_LEVEL)
     sleep(2)
@@ -211,7 +210,8 @@ def setup_fresh_install(
 
 def reset_progress(
     home: HomePage,
-    cheat: CheatPage,
+    setting: SettingPage,
+    game: GamePage,
     target_level: int = DEFAULT_TARGET_LEVEL,
 ) -> None:
     """Reset game progress and set up to a target level.
