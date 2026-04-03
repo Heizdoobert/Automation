@@ -60,7 +60,6 @@ def _get_screen_size():
     except Exception:
         return 720, 1280
 
-
 @logwrap
 def swipe_up():
     w, h = _get_screen_size()
