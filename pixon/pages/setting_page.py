@@ -44,14 +44,8 @@ class SettingPage(BasePage):
     def save_progress(self) -> None:
         self.tap(self.btn_save_progress)
 
-    def delete_progress(self, word: str = "confirm", assume_at_home: bool = False) -> None:
+    def delete_progress(self, word: str = "confirm") -> None:
         home = HomePage()
-        # Even if we assume we are at home, let's check and try to go home if not.
-        if not home.is_at_home():
-            wrapper.log_info("delete_progress: not at home — trying to go home")
-            if not home.go_home(force=True):
-                raise AssertionError("delete_progress: failed to navigate to home screen")
-
         if not self.open_setting():
             raise AssertionError("delete_progress: cannot open settings panel")
         self.save_progress()
@@ -67,7 +61,4 @@ class SettingPage(BasePage):
         self.tap(self.blank_confirm)
         self.input_text(str(word), confirm=True)
         sleep(1)
-        if not self.wait_for_element(home.btn_delete, timeout=5):
-            raise AssertionError("delete_progress: btn_delete not found")
         self.tap(home.btn_delete)
-        wrapper.log_info("delete_progress: confirmed — game will restart")

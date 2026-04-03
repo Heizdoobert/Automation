@@ -1,6 +1,7 @@
 # conftest_daily.py
 import time
 import random
+from datetime import datetime, timedelta
 from airtest.core.api import exists, sleep, stop_app
 import pixon.pixonwrapper as wrapper
 from pixon.pages.home_page import HomePage
@@ -9,7 +10,7 @@ from pixon.pages.setting_page import SettingPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
-from pixon.adb_utils import (cold_start_with_combined, cold_start_with_level, set_combined,
+from pixon.adb_utils import (cold_start_with_combined, cold_start_with_level, set_autoplay, cold_start_with_json,
                        set_level, set_coin, set_booster, set_system_time)
 
 package_name = "com.woodpuzzle.pin3d"
@@ -25,9 +26,7 @@ def open_app_with_fake_ads(home: HomePage) -> None:
     """Setup app with fake ads on.
 
     Args:
-        cheat (CheatPage): Open cheat mode
         home (HomePage): Checking home
-        ads (RemoveAds): Setup fake ads
     """
     cold_start_with_combined(fakeads=True, heart=5, level=3, booster={"drill": 20, "hammer": 20, "magnet": 20}, coin=5000)
     sleep(20)
@@ -52,42 +51,18 @@ def close_all_popups(home: HomePage, repeat: int = 5) -> None:
         wrapper.log_info(f"Closed {closed} popup(s)")
 
 def go_home_clean(home: HomePage, retries: int = 3) -> None:
-    """Navigate to and confirm home screen.
-
-    Args:
-        home (HomePage): HomePage instance for navigation and state checking
-        retries (int, optional): Number of retry attempts to reach home. Defaults to 3.
-    """
-    wrapper.log_info("=== go_home_clean started ===")
     close_all_popups(home)
-    wrapper.log_info("After close_all_popups")
-    at_home = home.is_at_home()
-    wrapper.log_info(f"is_at_home() returned: {at_home}")
-    if at_home:
-        wrapper.log_info("Already at home")
+    if home.is_at_home():
         close_all_popups(home)
-        wrapper.log_info("After second close_all_popups")
         return
     for attempt in range(retries):
-        wrapper.log_info(f"go_home_clean attempt {attempt+1} started")
-        close_all_popups(home)
-        wrapper.log_info("After close_all_popups in loop")
         if home.go_home(force=False):
-            wrapper.log_info("go_home returned True")
             sleep(1)
             close_all_popups(home)
-            wrapper.log_info("After close_all_popups post-go_home")
-            at_home = home.is_at_home()
-            wrapper.log_info(f"is_at_home() returned: {at_home}")
-            if at_home:
-                wrapper.log_info("Home screen confirmed")
+            if home.is_at_home():
                 return
-            else:
-                wrapper.log_info("is_at_home was False after go_home")
-        else:
-            wrapper.log_info("go_home returned False")
         wrapper.log_warning(f"go_home_clean attempt {attempt+1} failed")
-    assert False, "Not at home after navigation"
+    raise AssertionError("Not at home after navigation")
 
 
 # ==================== GAME & LEVEL HELPERS ====================
@@ -132,12 +107,12 @@ def _autoplay_to_level(game: GamePage, target_level: int, timeout: int = LEVEL_W
     Raises:
         AssertionError: If the target level is not reached within the timeout.
     """
-    set_combined(autoplay=True, playspeed=2)
+    set_autoplay(True, playspeed=2)
     start = time.time()
     while time.time() - start < timeout:
         current_lv = game.get_current_level()
         if current_lv >= target_level:
-            set_combined(autoplay=False)
+            set_autoplay(False)
             wrapper.log_info(f"Autoplay reached level {target_level}")
             return
         sleep(5)
@@ -183,8 +158,6 @@ def _set_level_and_win(cheat: CheatPage, home: HomePage, level: int) -> None:
 
 
 # ==================== SETUP / TEARDOWN ====================
-import subprocess
-
 def setup_fresh_install(
     home: HomePage,
     game: GamePage,
@@ -199,7 +172,8 @@ def setup_fresh_install(
         setting (SettingPage): SettingPage instance for settings
     """
     go_home_clean(home)
-    setting.delete_progress(assume_at_home=True)
+    setting.delete_progress()
+    sleep(20)
     _wait_for_splash_and_enter_game(home, game)
     _autoplay_to_level(game, 3)
     sleep(1)
@@ -211,6 +185,7 @@ def setup_fresh_install(
 def reset_progress(
     home: HomePage,
     cheat: CheatPage,
+    setting: SettingPage,
     target_level: int = DEFAULT_TARGET_LEVEL,
 ) -> None:
     """Reset game progress and set up to a target level.
@@ -224,31 +199,8 @@ def reset_progress(
         wait (int, optional): Time in seconds to wait after deleting progress. Defaults to 15.
     """
     go_home_clean(home)
-    wrapper.log_info("Clearing app data via ADB")
-    subprocess.run(["adb", "shell", "pm", "clear", package_name], check=True)
-    wrapper.log_info("Starting app via ADB")
-    try:
-        subprocess.run(["adb", "shell", "am", "start", "-n", f"{package_name}/com.pixon.studio.CustomUnityActivity"], check=True)
-    except Exception as e:
-        wrapper.log_warning(f"Failed to start main activity: {e}")
-        subprocess.run(["adb", "shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1"], check=True)
-    wrapper.log_info("Waiting for app to start...")
-    sleep(30)
-    wrapper.log_info("Checking if app reached home screen...")
-    for i in range(18):
-        if home.is_at_home():
-            wrapper.log_info(f"App reached home screen after {(i+1)*5} seconds")
-            break
-        wrapper.log_info(f"Waiting for home screen... (attempt {i+1}/18)")
-        sleep(5)
-    else:
-        wrapper.log_error("App did not reach home screen after 90 seconds")
-        try:
-            home.take_screenshot("app_start_debug.png")
-            wrapper.log_info("Took screenshot for debugging: app_start_debug.png")
-        except Exception as e:
-            wrapper.log_warning(f"Failed to take screenshot: {e}")
-        raise AssertionError("App did not start or did not reach home screen after clearing data")
+    setting.delete_progress()
+    sleep(20)
     _set_level_and_win(cheat,home, 3)
     set_level(target_level)
     go_home_clean(home)
@@ -266,7 +218,8 @@ def cold_start_unlock_daily_mission(
         game (GamePage): GamePage instance for game actions
     """
     go_home_clean(home)
-    setting.delete_progress(assume_at_home=True)
+    setting.delete_progress()
+    sleep(20)
     _wait_for_splash_and_enter_game(home, game)
     cold_start_with_level(DEFAULT_TARGET_LEVEL)
 
@@ -354,7 +307,9 @@ def execute_mission_action(
         target_level = game.get_current_level() + value
         _autoplay_to_level(game, target_level)
         teardown_app()
-        open_app_with_fake_ads(home_page)
+        cold_start_with_json({"fakeads": True})
+        sleep(20)
+        close_all_popups(home_page)
     else:
         wrapper.log_warning(f"Unknown mission type: {mission_type}")
 
@@ -373,5 +328,12 @@ def check_lucky(lucky: LuckySpinPage) -> bool:
         return True
     return False
 
-def wait_for_next_day(time: int) -> None:
-    set_system_time("24*3600*{int}")
+def wait_for_next_day(hours: int=24) -> None:
+    """Setup time for test
+
+    Args:
+        hours (int, optional): Input time for the change. Defaults to 24.
+    """
+    target_time = datetime.now() + timedelta(hours=hours)
+    time_str = target_time.strftime("%Y%m%d.%H:%M:%S")
+    set_system_time(time_str)
