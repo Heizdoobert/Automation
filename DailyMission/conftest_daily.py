@@ -29,7 +29,7 @@ def open_app_with_fake_ads(home: HomePage) -> None:
         home (HomePage): Checking home
     """
     cold_start_with_combined(fakeads=True, heart=5, level=3, booster={"drill": 20, "hammer": 20, "magnet": 20}, coin=5000)
-    sleep(20)
+    sleep(30)
     close_all_popups(home)
 
 def close_all_popups(home: HomePage, repeat: int = 5) -> None:
@@ -290,7 +290,7 @@ def execute_mission_action(
         sleep(1)
         game.spend_coins(value)
     elif mission_type == "collect_nails_red":
-        set_level(game.get_current_level() + (value // 10))
+        set_level(game.get_current_level())
         _autoplay_to_level(game, game.get_current_level() + (value // 10))
         go_home_clean(home_page)
     elif mission_type == "collect_nails_blue":
