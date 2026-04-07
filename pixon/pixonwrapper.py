@@ -9,6 +9,7 @@ import imutils
 import numpy as np
 from pathlib import Path
 from typing import Union, Optional, Tuple, Any
+from pixon.image_ocr import find_all_text_with_ai
 
 from airtest.core.api import (
     G, connect_device, init_device, auto_setup, set_logdir,
@@ -241,7 +242,7 @@ def find_all_text(img_array: np.ndarray) -> list:
         return [line[1][0] for line in results[0] if line[1][1] >= 0.5]
     except Exception as e:
         print(f"PaddleOCR failed: {e}")
-        return []
+        return find_all_text_with_ai(img_array)
 
 def is_text_present(text_value: str, area=None) -> bool:
     screen = G.DEVICE.snapshot()

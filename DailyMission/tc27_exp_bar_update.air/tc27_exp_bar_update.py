@@ -36,7 +36,7 @@ def main():
         wrapper.log_info("=== TC27: EXP bar updates ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         exp_before = daily.get_exp_progress()
-        execute_mission_action(game, cheat,daily, home_page, lucky, "complete_levels", 3)
+        execute_mission_action(game, cheat,daily, home_page, lucky, "level_run", 3)
         sleep(2)
         exp_after = daily.get_exp_progress()
         if exp_after <= exp_before:
