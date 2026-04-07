@@ -289,9 +289,15 @@ def execute_mission_action(
         set_coin(value + 1000)
         sleep(1)
         game.spend_coins(value)
+    elif mission_type == "level_run":
+        home_page.click_play()
+        game.get_current_level()
+        _autoplay_to_level(game, game.get_current_level() + (value+5))
+        go_home_clean(home_page)
     elif mission_type == "collect_nails_red":
+        home_page.click_play()
         set_level(game.get_current_level())
-        _autoplay_to_level(game, game.get_current_level() + (value // 10))
+        _autoplay_to_level(game, game.get_current_level() + 10)
         go_home_clean(home_page)
     elif mission_type == "collect_nails_blue":
         set_level(game.get_current_level() + (value // 10))

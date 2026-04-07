@@ -1,21 +1,23 @@
 # Screw Land Automation Test
 
-Dự án automation test cho game Screw Land sử dụng Airtest.
+Project automation test game Screw Land using Airtest.
 
 ## Cấu trúc thư mục
 
-- `common/`: Các lớp dùng chung (BasePage)
-- `pages/`: Các Page Object tương ứng với từng màn hình
-- `pixon/`: Thư viện wrapper Airtest và các tiện ích
-- `tests/`: Các bộ test, mỗi test nằm trong thư mục `.air`
+- `common/`: Layer use maintain (BasePage)
+- `pages/`: Object file with function in game
+- `pixon/`: Pixon library and extention
+- `DailyMission/`: All file Dailymission test `.air`
 
-## Yêu cầu
+## requirement
 
 - Python 3.7+
 - Airtest
-- Tesseract OCR (cài đặt và cấu hình đường dẫn trong `pixonwrapper.py`)
+- Tesseract OCR
 
-## Cách chạy
+## how to install
+
+## how to run
 
 ```bash
 python pixon_run.py tests/DailyMission/test_new_user.air --device Android://127.0.0.1:5037/emulator-5554

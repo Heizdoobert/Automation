@@ -32,10 +32,11 @@ def main():
         wrapper.log_info("=== TC31: Offline -> online ===")
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         serial = G.DEVICE.serialno
-        subprocess.run(f"adb -s {serial} shell svc wifi disable", shell=True)
-        sleep(2)
         daily.open_daily_mission_popup()
         count_before = daily.get_mission_count()
+        subprocess.run(f"adb -s {serial} shell svc wifi disable", shell=True)
+        sleep(2)
+        subprocess.run(f"")
         subprocess.run(f"adb -s {serial} shell svc wifi enable", shell=True)
         sleep(5)
         daily.open_daily_mission_popup()

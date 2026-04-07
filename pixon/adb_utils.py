@@ -1,6 +1,7 @@
 # adb_utils.py
 import subprocess
 import json
+import sys
 from airtest.core.api import shell, stop_app
 import pixon.pixonwrapper as wrapper
 
@@ -38,7 +39,7 @@ def _send_intent(payload, warm_start=False):
         adb_cmd = f"am start -n {ACTIVITY} --es json '$payload'"
 
     # Full PowerShell command: set variable and run adb
-    ps_cmd = f"$payload='{escaped_json}'\ adb shell \"{adb_cmd}\""
+    ps_cmd = f"$payload='{escaped_json}'; adb shell \"{adb_cmd}\""
     wrapper.log_info(f"Sending ADB intent via PowerShell: {ps_cmd}")
 
     try:
@@ -171,3 +172,55 @@ def set_combined(level=None, coin=None, booster=None, fakeads=None,
 def set_system_time(datetime_str: str):
     subprocess.run("adb shell settings put global auto_time 0", shell=True)
     subprocess.run(f"adb shell date -s \"{datetime_str}\"", shell=True)
+
+# =============== PROCESS & NETWORK CONTROL ==============
+
+def run_adb_command(cmd: list, timeout: int =30) -> tuple:
+    """
+    run an ADB command and return (returncode, stdout, stderr)
+    """
+    try:
+        proc = subprocess.run(full_cmd, capture_output=True, text=True, timeout=timeout)
+        return proc.returncode, proc.stdout, proc.stderr
+    except subprocess.TimeoutExpired:
+        wrapper.log_error(f"ADB command timed out after {timeout}s: {' '.join(cmd)}")
+        return -1, "". "Timeout"
+    except Exception as e:
+        warpper.log_error(f"ADB command failed: {e}")
+        return -1, "", str(e)
+
+def stop_adb_server() -> bool:
+    """
+    Kill ADB server
+    """
+    return run_adb_command(["kill-server"])[0] == 0
+
+def disable_wifi() -> bool:
+    """
+    Turn off Wi-Fi on device (requires root/emulator)
+    """
+    return run_adb_command(["shell", "svc", "wifi", "disable"])[0] == 0
+
+def enable_wifi() -> bool:
+    """
+    Turn on Wi-Fi on device
+    """
+    return run_adb_command(["shell", "svc", "wifi", "enable"])[0] == 0
+
+def set_airplane_mode(on: bool) -> bool:
+    cmd = ["shell", "settings", "put", "global", "airplane_mode_on", "1" if on else "0"]
+    ret, _, _ = run_adb_command(cmd)
+    if ret == 0:
+        broadcast_cmd = ["shell", "am", "broadcast", "-a","android.intent.action.AIRPLANE_MODE"]
+        run_adb_command(broadcast_cmd)
+    return ret == 0
+
+def stop_subprocess(proc: subprocess.Popen, timeout: float = 5.0) -> None:
+    if proc.poll() is not None:
+        return
+    try:
+        proc.terminate()
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
