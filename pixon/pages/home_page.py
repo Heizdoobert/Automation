@@ -3,7 +3,6 @@ from pixon.common.base_page import BasePage
 from pathlib import Path
 from airtest.core.api import Template, sleep, touch, keyevent, G, start_app, exists
 import pixon.pixonwrapper as wrapper
-import subprocess
 import time
 
 IMAGE_DIR = Path(__file__).resolve().parent / "images"
@@ -17,7 +16,7 @@ def get_template(relative_path, record_pos, resolution=None):
             resolution = (w, h)
         except Exception:
             resolution = (720, 1280)
-    return Template(str(IMAGE_DIR / relative_path), record_pos=record_pos, resolution=resolution)
+    return Template(str(IMAGE_DIR / relative_path), record_pos=record_pos, resolution=resolution)  
 
 
 class HomePage(BasePage):
@@ -38,7 +37,6 @@ class HomePage(BasePage):
     label_setting      = get_template("settings_page/label_setting.png",  ( 0.003, -0.594))
 
     def is_at_home(self) -> bool:
-        # Check for home indicators for up to 10 seconds, checking every 0.5 seconds
         end_time = time.time() + 10
         while time.time() < end_time:
             if (exists(self.splash_home_icon) or
@@ -69,38 +67,17 @@ class HomePage(BasePage):
             sleep(2)
             if self.is_at_home():
                 return True
-
-        # Try home button
         wrapper.log_info("go_home: trying home button approach")
         for i in range(10):
-            keyevent("HOME")
+            self.tap(self.btn_setting)
+            self.tap(self.btn_home)
+            sleep(1)
+            self.tap(self.btn_home)
             sleep(1)
             if self.is_at_home():
                 wrapper.log_info(f"go_home: home button approach worked after {i+1} presses")
                 return True
         wrapper.log_warning("go_home: home button approach failed after 10 presses")
-
-        # Try back button
-        wrapper.log_info("go_home: trying back button approach")
-        for i in range(10):
-            keyevent("BACK")
-            sleep(1)
-            if self.is_at_home():
-                wrapper.log_info(f"go_home: back button approach worked after {i+1} presses")
-                return True
-        wrapper.log_warning("go_home: back button approach failed after 10 presses")
-
-        # Try to start the app
-        wrapper.log_info("go_home: trying to start app via ADB")
-        try:
-            start_app(PACKAGE_NAME)
-            sleep(10)
-            if self.is_at_home():
-                wrapper.log_info("go_home: starting app via ADB worked")
-                return True
-        except Exception as e:
-            wrapper.log_warning(f"go_home: failed to start app via ADB: {e}")
-
         wrapper.log_warning("go_home: all approaches failed")
         return False
 

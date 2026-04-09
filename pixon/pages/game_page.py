@@ -3,7 +3,7 @@ import re
 import pixon.pixonwrapper as wrapper
 from airtest.core.api import sleep
 from pixon.common.base_page import BasePage
-from .home_page import get_template
+from .home_page import get_template, HomePage
 
 
 class GamePage(BasePage):
@@ -40,6 +40,8 @@ class GamePage(BasePage):
         return (0, 0, w, int(120 * h / 1280))
 
     def get_current_level(self) -> int:
+        home_page = HomePage()
+        home_page.click_play()
         @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()

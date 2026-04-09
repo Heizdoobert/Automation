@@ -21,10 +21,6 @@ from DailyMission.conftest_daily import (
 
 auto_setup(__file__)
 
-# Add device connection check
-from airtest.core.api import connect_device
-from airtest.core.error import NoDeviceError
-
 package_name = "com.woodpuzzle.pin3d"
 
 home_page = HomePage()
@@ -37,10 +33,9 @@ setting   = SettingPage()
 def main():
     try:
         open_app_with_fake_ads(home_page)
-        open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC02: Check Daily Mission icon before and after unlock ===")
 
-        reset_progress(home_page, cheat, target_level=7)
+        reset_progress(home_page, cheat, setting, target_level=7)
 
         go_home_clean(home_page)
         if daily.wait_for_element(daily.btn_daily_mission, timeout=3):
