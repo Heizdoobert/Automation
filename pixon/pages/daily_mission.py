@@ -122,6 +122,7 @@ class DailyMissionPage(BasePage):
             self.tap(self.btn_play_daily)
 
     def get_exp_progress(self) -> int:
+        self.tap(self.btn_daily_mission)
         @wrapper.retry(times=3, delay=1, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()
@@ -132,11 +133,24 @@ class DailyMissionPage(BasePage):
                 int(x2 * w / 720), int(y2 * h / 1280),
             )
             cropped = crop_image(screen, scaled)
-            for t in wrapper.find_all_text(cropped):
+
+            from pixon.image_ocr import find_all_text_with_ai
+            texts_or = find_all_text_with_ai(cropped)
+            for t in texts_or:
                 m = re.search(r'\d+', t)
                 if m:
+                    wrapper.log_info(f"Ai detected EXP: {m.group()}")
                     return int(m.group())
+
+            texts = wrapper.find_all_text(cropped)
+            if texts:
+                for t in texts:
+                    m = re.search(r'\d+', t)
+                    if m:
+                        return int(m.group())
             return 0
+        sleep(2)
+        self.tap(self.btn_close)
         return _attempt()
 
     def claim_exp_reward(self, milestone: int) -> bool:
