@@ -2,7 +2,7 @@
 
 Project automation test game Screw Land using Airtest.
 
-## Cấu trúc thư mục
+## Tree folder structor
 
 - `common/`: Layer use maintain (BasePage)
 - `pages/`: Object file with function in game
@@ -20,4 +20,5 @@ Project automation test game Screw Land using Airtest.
 ## how to run
 
 ```bash
-python pixon_run.py tests/DailyMission/test_new_user.air --device Android://127.0.0.1:5037/emulator-5554
+python pixon_run.py DailyMission\test_new_user.air --device android://127.0.0.1:5037/emulator-5554 --report reports
+```

@@ -6,30 +6,38 @@ import pixon.pixonwrapper as wrapper
 
 
 class CheatPage(BasePage):
-    cheat_menu       = get_template("cheat/menu_cheat.png",           (-0.422, -0.822))
-    close_cheat_menu = get_template("cheat/btn_close_cheat_mode.png", ( 0.432, -0.821))
+    cheat_menu = get_template("cheat/menu_cheat.png", (-0.422, -0.822))
+    close_cheat_menu = get_template("cheat/btn_close_cheat_mode.png", (0.432, -0.821))
 
     list_cheat_menu = [
         get_template("cheat/btn_system_check.png", (-0.092, -0.611)),
-        get_template("cheat/btn_console.png",      (-0.075, -0.326)),
-        get_template("cheat/btn_options.png",      (-0.069, -0.036)),
-        get_template("cheat/btn_profiler.png",     (-0.071,  0.233)),
+        get_template("cheat/btn_console.png", (-0.075, -0.326)),
+        get_template("cheat/btn_options.png", (-0.069, -0.036)),
+        get_template("cheat/btn_profiler.png", (-0.071, 0.233)),
     ]
 
-    level_label     = get_template("cheat/console/level/jump_to_number.png", (-0.19,   0.004))
-    go_to_level_btn = get_template("cheat/console/level/btn_go_to_lv.png",   (-0.265, -0.482))
-    winlevel_btn    = get_template("cheat/console/level/btn_winlv.png",       (-0.287, -0.325))
-    btn_break_all_piecein_wave = get_template("cheat/console/level/btn_break_all_piecein_wave.png", (-0.124, -0.167))
+    level_label = get_template("cheat/console/level/jump_to_number.png", (-0.19, 0.004))
+    go_to_level_btn = get_template(
+        "cheat/console/level/btn_go_to_lv.png", (-0.265, -0.482)
+    )
+    winlevel_btn = get_template("cheat/console/level/btn_winlv.png", (-0.287, -0.325))
+    btn_break_all_piecein_wave = get_template(
+        "cheat/console/level/btn_break_all_piecein_wave.png", (-0.124, -0.167)
+    )
 
     speed_button = [
-        get_template("cheat/console/auto_play_func/btn_speed_x1.png", (-0.383,  0.057)),
-        get_template("cheat/console/auto_play_func/btn_speed_x2.png", (-0.2,    0.057)),
-        get_template("cheat/console/auto_play_func/btn_speed_x4.png", ( 0.006,  0.068)),
-        get_template("cheat/console/auto_play_func/btn_speed_x6.png", ( 0.206,  0.068)),
+        get_template("cheat/console/auto_play_func/btn_speed_x1.png", (-0.383, 0.057)),
+        get_template("cheat/console/auto_play_func/btn_speed_x2.png", (-0.2, 0.057)),
+        get_template("cheat/console/auto_play_func/btn_speed_x4.png", (0.006, 0.068)),
+        get_template("cheat/console/auto_play_func/btn_speed_x6.png", (0.206, 0.068)),
     ]
     check_box = [
-        get_template("cheat/console/auto_play_func/btn_auto_play_off.png", (-0.376, -0.015)),
-        get_template("cheat/console/auto_play_func/btn_auto_play_on.png",  (-0.381, -0.018)),
+        get_template(
+            "cheat/console/auto_play_func/btn_auto_play_off.png", (-0.376, -0.015)
+        ),
+        get_template(
+            "cheat/console/auto_play_func/btn_auto_play_on.png", (-0.381, -0.018)
+        ),
     ]
 
     def open_cheat(self) -> None:
@@ -100,7 +108,11 @@ class CheatPage(BasePage):
             wrapper.log_info("win_level_and_continue: tapped btn_next")
             return True
         if home.wait_for_element(home.splash_home_icon, timeout=5):
-            wrapper.log_info("win_level_and_continue: game went to home (milestone flow)")
+            wrapper.log_info(
+                "win_level_and_continue: game went to home (milestone flow)"
+            )
             return False
-        wrapper.log_info("win_level_and_continue: neither btn_next nor home found — proceeding")
+        wrapper.log_info(
+            "win_level_and_continue: neither btn_next nor home found — proceeding"
+        )
         return False

@@ -1,8 +1,8 @@
 # adb_utils.py
 import subprocess
 import json
-import sys
-from airtest.core.api import shell, stop_app
+import base64
+from airtest.core.api import stop_app
 import pixon.pixonwrapper as wrapper
 
 PACKAGE = "com.woodpuzzle.pin3d"
@@ -11,75 +11,73 @@ ACTIVITY = f"{PACKAGE}/com.pixon.studio.CustomUnityActivity"
 
 def _is_app_running():
     try:
-        output = shell(f"pidof {PACKAGE}")
-        return output.strip() != ""
+        result = subprocess.run(
+            ["adb", "shell", "pidof", PACKAGE], capture_output=True, text=True
+        )
+        return result.stdout.strip() != ""
     except Exception:
         return False
 
 
-def _send_intent(payload, warm_start=False):
-    """Send ADB intent using PowerShell with $payload variable (exact required syntax)."""
+def _send_intent(payload, warm_start=False, use_base64=False):
     if payload is None:
         wrapper.log_error("Payload is None, cannot send intent")
         return False
 
-    # Convert payload to JSON string
     if isinstance(payload, dict):
-        json_str = json.dumps(payload, separators=(',', ':'))
+        json_str = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
     else:
         json_str = str(payload)
 
-    # Escape single quotes for PowerShell
-    escaped_json = json_str.replace("'", "''")
-
-    # Build the adb command part (without variable expansion)
-    if warm_start:
-        adb_cmd = f"am start --activity-single-top -n {ACTIVITY} --es json '$payload'"
+    if use_base64:
+        extra_key = "jsonBase64"
+        encoded_value = base64.b64encode(json_str.encode("utf-8")).decode("ascii")
     else:
-        adb_cmd = f"am start -n {ACTIVITY} --es json '$payload'"
+        extra_key = "json"
+        encoded_value = json_str
 
-    # Full PowerShell command: set variable and run adb
-    ps_cmd = f"$payload='{escaped_json}'; adb shell \"{adb_cmd}\""
-    wrapper.log_info(f"Sending ADB intent via PowerShell: {ps_cmd}")
+    escaped_value = encoded_value.replace("'", "''")
+
+    if warm_start:
+        adb_cmd = (
+            f"am start --activity-single-top -n {ACTIVITY} --es {extra_key} '$payload'"
+        )
+    else:
+        adb_cmd = f"am start -n {ACTIVITY} -es {extra_key} '$payload'"
+
+    ps_cmd = f"$payload='{escaped_value}'; adb shell \"{adb_cmd}\""
+
+    wrapper.log_info(f"Sending {'warm' if warm_start else 'cold'} intent: {json_str}")
 
     try:
         result = subprocess.run(
             ["powershell", "-Command", ps_cmd],
             capture_output=True,
-            text=True
+            text=True,
+            timeout=15,
         )
         if result.returncode != 0:
-            wrapper.log_warning(f"ADB intent failed: {result.stderr}")
-        return result.returncode == 0
+            wrapper.log_error(f"ADB intent failed with code {result.returncode}")
+            if result.stderr:
+                wrapper.log_error(f"ADB error output: {result.stderr.strip()}")
+            return False
+        wrapper.log_info("Intent sent successfully")
+        return True
+    except subprocess.TimeoutExpired:
+        wrapper.log_error("ADB command timed out")
     except Exception as e:
         wrapper.log_error(f"ADB exception: {e}")
         return False
 
 
 # ==================== COLD START ====================
-def cold_start_with_json(payload):
+def cold_start_with_json(payload, use_base64=True):
     stop_app(PACKAGE)
-    return _send_intent(payload, warm_start=False)
+    return _send_intent(payload, warm_start=False, use_base64=use_base64)
 
 
-def cold_start_with_level(level):
-    return cold_start_with_json({"level": level})
-
-
-def cold_start_with_coin(coin):
-    return cold_start_with_json({"coin": coin})
-
-
-def cold_start_with_booster(booster_dict):
-    return cold_start_with_json({"booster": booster_dict})
-
-
-def cold_start_with_fake_ads(enabled):
-    return cold_start_with_json({"fakeads": enabled})
-
-
-def cold_start_with_autorotate(enabled):
-    return cold_start_with_json({"autorotate": enabled})
+def cold_start_with_param(key, value, use_base64=True):
+    return cold_start_with_json({key: value}, use_base64=use_base64)
 
 
 def cold_start_with_autoplay(enabled, playspeed=2):
@@ -89,54 +87,46 @@ def cold_start_with_autoplay(enabled, playspeed=2):
     return cold_start_with_json(payload)
 
 
-def cold_start_with_playspeed(speed):
-    return cold_start_with_json({"playSpeed": speed})
-
-
-def cold_start_with_heart(heart):
-    return cold_start_with_json({"heart": heart})
-
-
-def cold_start_with_combined(level=None, coin=None, booster=None, fakeads=None,
-                             autorotate=None, autoplay=None, playspeed=None, heart=None):
+def cold_start_with_combined(
+    level=None,
+    coin=None,
+    booster=None,
+    fakeads=None,
+    autorotate=None,
+    autoplay=None,
+    playspeed=None,
+    heart=None,
+):
     payload = {}
-    if level is not None: payload["level"] = level
-    if coin is not None: payload["coin"] = coin
-    if booster is not None: payload["booster"] = booster
-    if fakeads is not None: payload["fakeads"] = fakeads
-    if autorotate is not None: payload["autorotate"] = autorotate
-    if autoplay is not None: payload["autoplay"] = autoplay
-    if playspeed is not None: payload["playSpeed"] = playspeed
-    if heart is not None: payload["heart"] = heart
+    if level is not None:
+        payload["level"] = level
+    if coin is not None:
+        payload["coin"] = coin
+    if booster is not None:
+        payload["booster"] = booster
+    if fakeads is not None:
+        payload["fakeads"] = fakeads
+    if autorotate is not None:
+        payload["autorotate"] = autorotate
+    if autoplay is not None:
+        payload["autoplay"] = autoplay
+    if playspeed is not None:
+        payload["playSpeed"] = playspeed
+    if heart is not None:
+        payload["heart"] = heart
     return cold_start_with_json(payload)
 
 
 # ==================== WARM START ====================
-def warm_send_json(payload):
+def warm_send_json(payload, use_base64=True):
     if not _is_app_running():
         wrapper.log_warning("App not running, cannot warm send")
         return False
-    return _send_intent(payload, warm_start=True)
+    return _send_intent(payload, warm_start=True, use_base64=use_base64)
 
 
-def set_level(level):
-    return warm_send_json({"level": level})
-
-
-def set_coin(coin):
-    return warm_send_json({"coin": coin})
-
-
-def set_booster(booster_dict):
-    return warm_send_json({"booster": booster_dict})
-
-
-def set_fake_ads(enabled):
-    return warm_send_json({"fakeads": enabled})
-
-
-def set_autorotate(enabled):
-    return warm_send_json({"autorotate": enabled})
+def set_param(key, value, use_base64=True):
+    return warm_send_json({key: value}, use_base64=use_base64)
 
 
 def set_autoplay(enabled, playspeed=2):
@@ -146,48 +136,71 @@ def set_autoplay(enabled, playspeed=2):
     return warm_send_json(payload)
 
 
-def set_playspeed(speed):
-    return warm_send_json({"playSpeed": speed})
-
-
-def set_heart(heart):
-    return warm_send_json({"heart": heart})
-
-
-def set_combined(level=None, coin=None, booster=None, fakeads=None,
-                 autorotate=None, autoplay=None, playspeed=None, heart=None):
+def set_combined(
+    level=None,
+    coin=None,
+    booster=None,
+    fakeads=None,
+    autorotate=None,
+    autoplay=None,
+    playspeed=None,
+    heart=None,
+):
     payload = {}
-    if level is not None: payload["level"] = level
-    if coin is not None: payload["coin"] = coin
-    if booster is not None: payload["booster"] = booster
-    if fakeads is not None: payload["fakeads"] = fakeads
-    if autorotate is not None: payload["autorotate"] = autorotate
-    if autoplay is not None: payload["autoplay"] = autoplay
-    if playspeed is not None: payload["playSpeed"] = playspeed
-    if heart is not None: payload["heart"] = heart
+    if level is not None:
+        payload["level"] = level
+    if coin is not None:
+        payload["coin"] = coin
+    if booster is not None:
+        payload["booster"] = booster
+    if fakeads is not None:
+        payload["fakeads"] = fakeads
+    if autorotate is not None:
+        payload["autorotate"] = autorotate
+    if autoplay is not None:
+        payload["autoplay"] = autoplay
+    if playspeed is not None:
+        payload["playSpeed"] = playspeed
+    if heart is not None:
+        payload["heart"] = heart
     return warm_send_json(payload)
 
 
 # ==================== SYSTEM HELPERS ====================
 def set_system_time(datetime_str: str):
-    subprocess.run("adb shell settings put global auto_time 0", shell=True)
-    subprocess.run(f"adb shell date -s \"{datetime_str}\"", shell=True)
+    subprocess.run(["adb", "shell", "settings", "put", "global", "auto_time", "0"])
+    subprocess.run(["adb", "shell", "date", "-s", datetime_str], check=False)
+    wrapper.log_info(f"System time set to {datetime_str}")
+
 
 # =============== PROCESS & NETWORK CONTROL ==============
+def is_adb_device_connected():
+    try:
+        result = subprocess.run(
+            ["adb", "devices"], capture_output=True, text=True, timeout=5
+        )
+        lines = result.stdout.strip().split("\n")
+        return any("\tdevice" in line for line in lines[1:])
+    except Exception:
+        return False
 
-def run_adb_command(cmd: list, timeout: int =30) -> tuple:
+
+def run_adb_command(cmd: list, timeout: int = 30) -> tuple:
     """
     run an ADB command and return (returncode, stdout, stderr)
     """
     try:
-        proc = subprocess.run(full_cmd, capture_output=True, text=True, timeout=timeout)
+        proc = subprocess.run(
+            ["adb"] + cmd, capture_output=True, text=True, timeout=timeout
+        )
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
         wrapper.log_error(f"ADB command timed out after {timeout}s: {' '.join(cmd)}")
-        return -1, "". "Timeout"
+        return -1, "", "Command timed out"
     except Exception as e:
-        warpper.log_error(f"ADB command failed: {e}")
+        wrapper.log_error(f"ADB command failed: {e}")
         return -1, "", str(e)
+
 
 def stop_adb_server() -> bool:
     """
@@ -195,11 +208,13 @@ def stop_adb_server() -> bool:
     """
     return run_adb_command(["kill-server"])[0] == 0
 
+
 def disable_wifi() -> bool:
     """
     Turn off Wi-Fi on device (requires root/emulator)
     """
     return run_adb_command(["shell", "svc", "wifi", "disable"])[0] == 0
+
 
 def enable_wifi() -> bool:
     """
@@ -207,13 +222,21 @@ def enable_wifi() -> bool:
     """
     return run_adb_command(["shell", "svc", "wifi", "enable"])[0] == 0
 
+
 def set_airplane_mode(on: bool) -> bool:
     cmd = ["shell", "settings", "put", "global", "airplane_mode_on", "1" if on else "0"]
     ret, _, _ = run_adb_command(cmd)
     if ret == 0:
-        broadcast_cmd = ["shell", "am", "broadcast", "-a","android.intent.action.AIRPLANE_MODE"]
+        broadcast_cmd = [
+            "shell",
+            "am",
+            "broadcast",
+            "-a",
+            "android.intent.action.AIRPLANE_MODE",
+        ]
         run_adb_command(broadcast_cmd)
     return ret == 0
+
 
 def stop_subprocess(proc: subprocess.Popen, timeout: float = 5.0) -> None:
     if proc.poll() is not None:
