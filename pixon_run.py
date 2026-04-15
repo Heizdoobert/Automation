@@ -101,7 +101,7 @@ def run_one(
         print(f"  Exporting report -> {test_report_dir}")
         try:
             from airtest.report.report import LogToHtml
-
+            script_root_str = str(air_py) if not isinstance(air_py, str) else air_py
             LogToHtml(script_root=str(air_py), export_dir=str(test_report_dir)).report()
         except Exception as e:
             print(f"  [WARN] Failed to export report: {e}")
@@ -139,14 +139,28 @@ def generate_summary_report(results: list[tuple[str, bool]], report_root: Path) 
             </tr>
     """
     for name, passed in results:
-        report_link = f"{name}/log.html"
+        test_dir = report_root / name
+        log_file = None
+
+        for pattern in ["log.html", "*.log/log.html", "*/log.html"]:
+            matches = list(test_dir.glob(pattern))
+            if matches:
+                log_file = matches[0]
+                break 
+
+        if log_file:
+            rel_path = log_file.relative_to(report_root).as_posix()
+            link_html = f'<a href="{rel_path}" target="_blank">View Report</a>'
+        else:
+            link_html = '<span style="color:gray;">No report</span>'
+
         result_class = "pass" if passed else "fail"
         result_text = "PASS" if passed else "FAIL"
         html_content += f"""
             <tr>
                 <td>{name}</td>
                 <td class="{result_class}">{result_text}</td>
-                <td><a href="{report_link}" target="_blank">View Report</a></td>
+                <td>{link_html}</td>
             </tr>
         """
     html_content += """
