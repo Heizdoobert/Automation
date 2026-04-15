@@ -132,7 +132,7 @@ def _autoplay_to_level(
     Raises:
         AssertionError: If the target level is not reached within the timeout.
     """
-    set_autoplay(True, playspeed=2)
+    set_autoplay(True, 2)
     wrapper.log_info(
         f"Started autoplay to reach level {target_level} with timeout of {timeout}s"
     )
@@ -141,7 +141,7 @@ def _autoplay_to_level(
         current_lv = game.get_current_level()
         wrapper.log_info(f"Current level: {current_lv}, Target level: {target_level}")
         if current_lv >= target_level:
-            set_autoplay(False)
+            set_autoplay(False, 1)
             wrapper.log_info(f"Autoplay reached level {target_level}")
             return
         sleep(5)

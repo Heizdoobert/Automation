@@ -80,7 +80,7 @@ def cold_start_with_param(key, value, use_base64=True):
     return cold_start_with_json({key: value}, use_base64=use_base64)
 
 
-def cold_start_with_autoplay(enabled, playspeed=2):
+def cold_start_with_autoplay(enabled, playspeed=None):
     payload = {"autoplay": enabled}
     if enabled:
         payload["playSpeed"] = playspeed
@@ -129,10 +129,14 @@ def set_param(key, value, use_base64=True):
     return warm_send_json({key: value}, use_base64=use_base64)
 
 
-def set_autoplay(enabled, playspeed=2):
+def set_autoplay(enabled, playspeed=None):
     payload = {"autoplay": enabled}
-    if enabled:
+    if playspeed is not None:
         payload["playSpeed"] = playspeed
+    elif enabled:
+        payload["playSpeed"] = 2
+    else:
+        payload["playSpeed"] = 1
     return warm_send_json(payload)
 
 

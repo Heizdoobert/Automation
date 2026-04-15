@@ -10,7 +10,7 @@ from pathlib import Path
 from pixon.pixonwrapper import *
 
 try:
-    from airtouch_fast import MinitouchWrapper
+    from pixon.airtouch_fast import MinitouchWrapper
     HAS_MINITOUCH = True
 except ImportError:
     HAS_MINITOUCH = False
