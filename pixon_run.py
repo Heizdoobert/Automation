@@ -9,6 +9,13 @@ from pathlib import Path
 
 from pixon.pixonwrapper import *
 
+try:
+    from airtouch_fast import MinitouchWrapper
+    HAS_MINITOUCH = True
+except ImportError:
+    HAS_MINITOUCH = False
+    MinitouchWrapper = None
+
 logger = logging.getLogger("airtest")
 logger.setLevel(logging.INFO)
 
@@ -187,6 +194,39 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Failed to connect device: {e}")
             return 1
 
+    mt_wrapper = None
+    if HAS_MINITOUCH and device_id:
+        try:
+            mt_wrapper = MinitouchWrapper(serial=device_id)
+            mt_wrapper.start()
+            print(f"Minitouch daemon started for {device_id}")
+
+            def airtest_touch(pos, **kwargs):
+                if isinstance(pos, (list, tuple)) and len(pos) >= 2:
+                    x, y = int(pos[0]), int(pos[1])
+                else:
+                    x, y = int(pos), kwargs.get('y', 0)
+                mt_wrapper.touch(x, y)
+                return pos
+
+            def airtest_swipe(p1, p2=None, **kwargs):
+                if p2 is None:
+                    print("Warning: swipe with vector not fully supported by airtouch-fast")
+                    return
+                start = (int(p1[0]), int(p1[1])) if isinstance(p1, (list, tuple)) else (0, 0)
+                end = (int(p2[0]), int(p2[1])) if isinstance(p2, (list, tuple)) else (0, 0)
+                duration = kwargs.get('duration', 0.5)
+                mt_wrapper.swipe(start, end, duration=duration)
+                return p2
+
+            if G.DEVICE:
+                G.DEVICE.touch = airtest_touch
+                G.DEVICE.swipe = airtest_swipe
+                print("Airtest touch/swipe methods replaced with airtouch-fast (wrapper applied).")
+
+        except Exception as e:
+            print(f"Warning: MinitouchWrapper failed: {e}")
+
     report_root = Path(args.report).resolve() if args.report else (Path.cwd().resolve() / "reports")
     report_root.mkdir(parents=True, exist_ok=True)
 
@@ -200,6 +240,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  -> {test_name}: {'PASSED PASS' if passed else 'FAILED FAIL'}")
 
     generate_summary_report(results, report_root)
+
+    if mt_wrapper:
+        try:
+            mt_wrapper.stop()
+            print("Minitouch daemon stopped.")
+        except Exception as e:
+            print(f"Warning: failed to stop MinitouchWrapper: {e}")
 
     total = len(results)
     passed_cnt = sum(1 for _, ok in results if ok)

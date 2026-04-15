@@ -43,7 +43,7 @@ def _send_intent(payload, warm_start=False, use_base64=False):
             f"am start --activity-single-top -n {ACTIVITY} --es {extra_key} '$payload'"
         )
     else:
-        adb_cmd = f"am start -n {ACTIVITY} -es {extra_key} '$payload'"
+        adb_cmd = f"am start -n {ACTIVITY} --es {extra_key} '$payload'"
 
     ps_cmd = f"$payload='{escaped_value}'; adb shell \"{adb_cmd}\""
 

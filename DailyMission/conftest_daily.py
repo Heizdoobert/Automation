@@ -181,7 +181,7 @@ def _advance_levels(
     wrapper.log_info(f"Advanced from level {current_lv} to {target_level}")
 
 
-def _set_level_and_win(cheat: CheatPage, home: HomePage, level: int) -> None:
+def _set_level_and_win(cheat: CheatPage, home: HomePage, game: GamePage, level: int) -> None:
     """Set the level and win it to return to home.
 
     Args:
@@ -190,6 +190,7 @@ def _set_level_and_win(cheat: CheatPage, home: HomePage, level: int) -> None:
         level (int): The level to set and win
     """
     home.click_play()
+    _autoplay_to_level(game, level)
     set_param("level", level)
     sleep(3)
     cheat.open_cheat()
@@ -241,6 +242,7 @@ def reset_progress(
     home: HomePage,
     cheat: CheatPage,
     setting: SettingPage,
+    game: GamePage,
     target_level: int = DEFAULT_TARGET_LEVEL,
 ) -> None:
     """Reset game progress and set up to a target level.
@@ -258,7 +260,7 @@ def reset_progress(
     setting.delete_progress()
     wrapper.log_info("Waiting for progress deletion to take effect for reset setup")
     sleep(20)
-    _set_level_and_win(cheat, home, 3)
+    _set_level_and_win(cheat, home, game, 3)
     wrapper.log_info("Set level to 3 and won to return home for reset setup")
     set_param("level", target_level)
     wrapper.log_info(f"Set level to {target_level} for reset setup")
@@ -303,7 +305,7 @@ def setup_unlocked_daily_mission(
     """
     current_lv = _enter_game_and_get_level(home, game)
     if current_lv < target_level:
-        _set_level_and_win(cheat, home, target_level)
+        _set_level_and_win(cheat, home, game, target_level)
         home.click_btn_next()
     go_home_clean(home)
 

@@ -45,7 +45,7 @@ class CheatPage(BasePage):
         hidden_x = int(50 * width / 720)
         hidden_y = int(640 * height / 1280)
         hidden_button = (hidden_x, hidden_y)
-        for _ in range(3):
+        for _ in range(4):
             touch(hidden_button)
         if not self.wait_for_element(self.cheat_menu, timeout=10):
             raise Exception("Cannot open cheat menu")
