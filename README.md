@@ -2,24 +2,30 @@ Requirements:
     Python 3.10: https://www.python.org/downloads/windows/
     Airtest: https://github.com/AirtestProject/Airtest/tree/master
 
-Project automation test game Screw Land using Airtest.
+Automation test project for Screw Land game using Airtest.
 
-## Cấu trúc thư mục
+## Folder Structure
 
-- `common/`: Layer use maintain (BasePage)
-- `pages/`: Object file with function in game
-- `pixon/`: Pixon library and extention
-- `DailyMission/`: All file Dailymission test `.air`
+- `common/`: BasePage and shared utilities
+- `pages/`: Page object classes with game actions
+- `pixon/`: Pixon library and custom extensions
+- `DailyMission/`: Daily mission test cases (`.air` files)
 
-## requirement
+## Requirements
 
 - Python 3.7+
 - Airtest
 - Tesseract OCR
 
-## how to install
+## Tool Instructions
 
-## how to run
+See [Tool-Airtest-Win-11](https://github.com/Heizdoobert/Tool-Airtest-Win-11/blob/main/README.md)
+
+## Installation
+
+(Add steps here)
+
+## Usage
 
 ```bash
-python pixon_run.py tests/DailyMission/test_new_user.air --device Android://127.0.0.1:5037/emulator-5554
+python pixon_run.py <folder>\<test_case>.air --report reports

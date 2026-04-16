@@ -38,7 +38,7 @@ def main():
         setup_fresh_install(home_page, game, setting)
 
         wrapper.log_info("Setting level to 11 and winning to trigger unlock...")
-        _set_level_and_win(cheat, home_page, 11)
+        _set_level_and_win(cheat, home_page, game, 11)
         _enter_game_and_get_level(home_page, game)
         go_home_clean(home_page)
 

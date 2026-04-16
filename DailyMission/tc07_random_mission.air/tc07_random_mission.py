@@ -13,7 +13,12 @@ from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import setup_unlocked_daily_mission, teardown_app, open_app_with_fake_ads
+from DailyMission.conftest_daily import (
+    setup_unlocked_daily_mission,
+    teardown_app,
+    open_app_with_fake_ads,
+    go_home_clean,
+)
 
 auto_setup(__file__)
 
@@ -25,10 +30,12 @@ game = GamePage()
 daily = DailyMissionPage()
 setting = SettingPage()
 
+
 def main():
     try:
         open_app_with_fake_ads(home_page)
         wrapper.log_info("=== TC07: Check random 5 missions per day ===")
+        go_home_clean(home_page)
         setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
         daily.open_daily_mission_popup()
         count_a = daily.get_mission_count()
@@ -50,5 +57,7 @@ def main():
     finally:
         teardown_app()
 
+
 if __name__ == "__main__":
     main()
+

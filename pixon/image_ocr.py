@@ -40,7 +40,7 @@ def find_all_text_with_ai(img_array: np.ndarray, max_retries: int =3) -> list:
                     "content": [
                         {
                         "type": "text",
-                        "text": "Extract all visible text from this image. Return each text line as a separate string in a Python list format. Example: ['Level: 5', 'ADS', '0%']. Only return the list, no extra text or explanation."
+                        "text": "Extract all visible text from this image. Return each text line as a separate string in a Python list format. Example: ['ADS', 'Level: 5', '0%']. Only return the list, no extra text or explanation."
                             },
                         {
                             "type": "image_url",
