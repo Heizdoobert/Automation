@@ -172,9 +172,23 @@ def set_combined(
 
 # ==================== SYSTEM HELPERS ====================
 def set_system_time(datetime_str: str):
-    subprocess.run(["adb", "shell", "settings", "put", "global", "auto_time", "0"])
-    subprocess.run(["adb", "shell", "date", "-s", datetime_str], check=False)
-    wrapper.log_info(f"System time set to {datetime_str}")
+    """
+    Set system time
+    """
+    subprocess.run("adb shell settings put global auto_time 0", shell=True)
+
+    parts = datetime_str.split(".")
+    if len(parts) == 2:
+        date_part = parts[0]
+        time_part = parts[1]
+        month = date_part[4:6]
+        day = date_part[6:8]
+        year = date_part[2:4]
+        adb_date = f"{month}{day}{year}"
+        subprocess.run(f"adb shell date {adb_date}", shell=True)
+    else:
+        subprocess.run(f"adb shell date {datetime_str}", shell=True)
+    wrapper.log_info(f"System time set to: {datetime_str}")
 
 
 # =============== PROCESS & NETWORK CONTROL ==============

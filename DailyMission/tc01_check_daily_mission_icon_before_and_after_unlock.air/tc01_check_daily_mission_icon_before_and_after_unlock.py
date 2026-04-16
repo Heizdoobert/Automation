@@ -15,8 +15,12 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.setting_page import SettingPage
 from DailyMission.conftest_daily import (
-    reset_progress, teardown_app, open_app_with_fake_ads,
-    _set_level_and_win, go_home_clean
+    reset_progress,
+    teardown_app,
+    open_app_with_fake_ads,
+    _set_level_and_win,
+    _autoplay_to_level,
+    go_home_clean,
 )
 
 auto_setup(__file__)
@@ -24,20 +28,23 @@ auto_setup(__file__)
 package_name = "com.woodpuzzle.pin3d"
 
 home_page = HomePage()
-cheat     = CheatPage()
-game      = GamePage()
-daily     = DailyMissionPage()
-setting   = SettingPage()
+cheat = CheatPage()
+game = GamePage()
+daily = DailyMissionPage()
+setting = SettingPage()
 
 
 def main():
     try:
         open_app_with_fake_ads(home_page)
-        wrapper.log_info("=== TC01, TC02: Check Daily Mission icon before and after unlock ===")
+        wrapper.log_info(
+            "=== TC01, TC02: Check Daily Mission icon before and after unlock ==="
+        )
 
         reset_progress(home_page, cheat, setting, game, target_level=3)
-        
+
         wrapper.log_info("Setting level to 7 via ADB and winning...")
+        _autoplay_to_level(game, 3)
         _set_level_and_win(cheat, home_page, game, 7)
         go_home_clean(home_page)
 

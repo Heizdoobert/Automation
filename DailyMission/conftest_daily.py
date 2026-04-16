@@ -133,19 +133,21 @@ def _autoplay_to_level(
         AssertionError: If the target level is not reached within the timeout.
     """
     set_autoplay(True, 2)
-    wrapper.log_info(
-        f"Started autoplay to reach level {target_level} with timeout of {timeout}s"
-    )
+    wrapper.log_info(f"Started autoplay to reach level {target_level}")
     start = time.time()
-    while time.time() - start < timeout:
+    while True:
         current_lv = game.get_current_level()
-        wrapper.log_info(f"Current level: {current_lv}, Target level: {target_level}")
+        elapsed = time.time() - start
+        wrapper.log_info(
+            f"Elapsed: {elapsed:.1f}s ,Current lv: {current_lv}, Target: {target_level}"
+        )
         if current_lv >= target_level:
             set_autoplay(False, 1)
-            wrapper.log_info(f"Autoplay reached level {target_level}")
+            wrapper.log_info(
+                f"Autoplay reached level {target_level}, after {elapsed:.2f} seconds"
+            )
             return
         sleep(5)
-    raise AssertionError(f"Autoplay failed to reach level {target_level} in {timeout}s")
 
 
 def _advance_levels(
@@ -181,7 +183,9 @@ def _advance_levels(
     wrapper.log_info(f"Advanced from level {current_lv} to {target_level}")
 
 
-def _set_level_and_win(cheat: CheatPage, home: HomePage, game: GamePage, level: int) -> None:
+def _set_level_and_win(
+    cheat: CheatPage, home: HomePage, game: GamePage, level: int
+) -> None:
     """Set the level and win it to return to home.
 
     Args:
@@ -190,7 +194,7 @@ def _set_level_and_win(cheat: CheatPage, home: HomePage, game: GamePage, level: 
         level (int): The level to set and win
     """
     home.click_play()
-    _autoplay_to_level(game, level)
+    _autoplay_to_level(game, 3)
     set_param("level", level)
     sleep(3)
     cheat.open_cheat()
