@@ -8,9 +8,9 @@ from .home_page import get_template, HomePage
 
 class GamePage(BasePage):
     booster = [
-        get_template("extend_play/btn_booster_1.png", (-0.218,  0.744)),
-        get_template("extend_play/btn_booster_2.png", (-0.01,   0.74 )),
-        get_template("extend_play/btn_booster_3.png", ( 0.218,  0.744)),
+        get_template("extend_play/btn_booster_1.png", (-0.218, 0.744)),
+        get_template("extend_play/btn_booster_2.png", (-0.01, 0.74)),
+        get_template("extend_play/btn_booster_3.png", (0.218, 0.744)),
     ]
     title_booster = [
         get_template("extend_play/title_booster_1.png", (0.007, -0.556)),
@@ -24,7 +24,7 @@ class GamePage(BasePage):
     ]
 
     BOOSTER_INDEX = {
-        "drill":  0,
+        "drill": 0,
         "hammer": 1,
         "magnet": 2,
     }
@@ -42,29 +42,50 @@ class GamePage(BasePage):
     def get_current_level(self) -> int:
         home_page = HomePage()
         home_page.click_play()
+
         @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()
+            if screen is None:
+                wrapper.log_error(f"Cannot see the screen!!!")
+                return None
             x1, y1, x2, y2 = self.LEVEL_AREA
             crop = screen[y1:y2, x1:x2]
             texts = wrapper.find_all_text(crop)
             wrapper.log_info(f"get_current_level OCR texts: {texts}")
             for t in texts:
-                m = re.search(r'(?:level|lv)[^\d]*(\d+)', t, re.IGNORECASE)
+                m = re.search(r"(?:level|lv)[^\d]*(\d+)", t, re.IGNORECASE)
                 if m:
                     return int(m.group(1))
-                m2 = re.fullmatch(r'\d{1,4}', t.strip())
+                m2 = re.fullmatch(r"\d{1,4}", t.strip())
                 if m2:
                     val = int(m2.group())
-                    if 1 <= val <= 9999:
+                    if 1 <= val <= 999:
                         return val
+
+            for t in texts:
+                m = re.fullmatch(r"\d{1,2}", t.strip())
+                if m:
+                    val = int(m.group())
+                    if 1 <= val <= 999:
+                        return val
+
+            for t in texts:
+                m = re.fullmatch(r"\d{3}", t.strip())
+                if m:
+                    wrapper.log_warning(
+                        f"Detected 3-digit number{m.group()}, maybe OCR error"
+                    )
+                    return int(m.group())
             return None
 
         result = _attempt()
         if result is not None:
             wrapper.log_info(f"get_current_level: detected level {result}")
             return result
-        raise RuntimeError("get_current_level: failed after all attempts, unable to detect level")
+        raise RuntimeError(
+            "get_current_level: failed after all attempts, unable to detect level"
+        )
 
     def activate_boosters(self) -> None:
         for i in range(len(self.booster)):
@@ -73,19 +94,19 @@ class GamePage(BasePage):
                 self.tap(self.booster[i])
                 sleep(2)
                 if self.wait_for_element(self.title_booster[i], timeout=3):
-                    wrapper.log_info(f"Booster {i+1} ran out — buying with coin")
+                    wrapper.log_info(f"Booster {i + 1} ran out — buying with coin")
                     self.tap(self.pay_coin[i])
                     sleep(3)
                     wrapper.log_info(f"Center coordinates: {self.CENTER}")
                     self.tap(self.CENTER)
                     sleep(2)
                 else:
-                    wrapper.log_info(f"Booster {i+1} available — no need to buy")
+                    wrapper.log_info(f"Booster {i + 1} available — no need to buy")
                     wrapper.log_info(f"Center coordinates: {self.CENTER}")
                     self.tap(self.CENTER)
                     sleep(2)
             else:
-                wrapper.log_warning(f"Booster {i+1} not found on screen")
+                wrapper.log_warning(f"Booster {i + 1} not found on screen")
 
     def _activate_single_booster(self, index: int) -> None:
         sleep(2)
@@ -93,21 +114,23 @@ class GamePage(BasePage):
             self.tap(self.booster[index])
             sleep(2)
             if self.wait_for_element(self.title_booster[index], timeout=3):
-                wrapper.log_info(f"Booster {index+1} ran out — buying with coin")
+                wrapper.log_info(f"Booster {index + 1} ran out — buying with coin")
                 self.tap(self.pay_coin[index])
                 sleep(3)
                 self.tap(self.CENTER)
                 sleep(2)
             else:
-                wrapper.log_info(f"Booster {index+1} available — no need to buy")
+                wrapper.log_info(f"Booster {index + 1} available — no need to buy")
                 self.tap(self.CENTER)
                 sleep(2)
         else:
-            wrapper.log_warning(f"Booster {index+1} not found on screen")
+            wrapper.log_warning(f"Booster {index + 1} not found on screen")
 
     def use_booster(self, booster_type: str, count: int) -> None:
         if booster_type in ("", "any"):
-            wrapper.log_info(f"use_booster: any type x{count} — activating all boosters {count} time(s)")
+            wrapper.log_info(
+                f"use_booster: any type x{count} — activating all boosters {count} time(s)"
+            )
             for _ in range(count):
                 self.activate_boosters()
             return
@@ -128,4 +151,6 @@ class GamePage(BasePage):
         self.use_booster("any", times)
 
     def collect_nails(self, color: str, count: int) -> None:
-        wrapper.log_info(f"collect_nails: color={color}, count={count} — not implemented")
+        wrapper.log_info(
+            f"collect_nails: color={color}, count={count} — not implemented"
+        )

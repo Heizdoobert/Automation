@@ -227,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
             mt_wrapper.start()
             print(f"Minitouch daemon started for {device_id}")
 
-            def airtest_touch(pos, kwargs):
+            def airtest_touch(pos, **kwargs):
                 if isinstance(pos, (list, tuple)) and len(pos) >= 2:
                     x, y = int(pos[0]), int(pos[1])
                 else:
