@@ -11,6 +11,7 @@ from pixon.pixonwrapper import *
 
 try:
     from pixon.airtouch_fast import MinitouchWrapper
+
     HAS_MINITOUCH = True
 except ImportError:
     HAS_MINITOUCH = False
@@ -18,6 +19,7 @@ except ImportError:
 
 logger = logging.getLogger("airtest")
 logger.setLevel(logging.INFO)
+
 
 def _collect_air_paths(argsv: list[str]) -> list[str]:
     raw_names = [a for a in argsv if a.lower().endswith(".air")]
@@ -60,8 +62,10 @@ def run_one(
     recorder = None
     recording_path: Path | None = None
     if recording:
-        file_name = f'{device_id or "device"}_record_{datetime.now().strftime("%Y%m%d_%H%M%S")}.mp4'
-        if isinstance(recording, str) and (os.path.isdir(recording) or os.path.isfile(recording)):
+        file_name = f"{device_id or 'device'}_record_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+        if isinstance(recording, str) and (
+            os.path.isdir(recording) or os.path.isfile(recording)
+        ):
             recording_path = Path(recording).resolve()
             if recording_path.is_dir():
                 recording_path = recording_path / file_name
@@ -73,7 +77,9 @@ def run_one(
         from pixon.ScrcpyRecorder import ScrcpyRecorder
 
         scrcpy_exe = current_dir / "scrcpy-win64" / "scrcpy.exe"
-        recorder = ScrcpyRecorder(output=recording_path, device=device_id, scrcpy_path=str(scrcpy_exe))
+        recorder = ScrcpyRecorder(
+            output=recording_path, device=device_id, scrcpy_path=str(scrcpy_exe)
+        )
         recorder.start()
         print(f"  Recording started → {recording_path}")
 
@@ -101,6 +107,7 @@ def run_one(
         print(f"  Exporting report -> {test_report_dir}")
         try:
             from airtest.report.report import LogToHtml
+
             script_root_str = str(air_py) if not isinstance(air_py, str) else air_py
             LogToHtml(script_root=str(air_py), export_dir=str(test_report_dir)).report()
         except Exception as e:
@@ -146,7 +153,7 @@ def generate_summary_report(results: list[tuple[str, bool]], report_root: Path) 
             matches = list(test_dir.glob(pattern))
             if matches:
                 log_file = matches[0]
-                break 
+                break
 
         if log_file:
             rel_path = log_file.relative_to(report_root).as_posix()
@@ -172,17 +179,22 @@ def generate_summary_report(results: list[tuple[str, bool]], report_root: Path) 
     summary_file.write_text(html_content, encoding="utf-8")
     print(f"Summary report generated: {summary_file}")
 
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Airtest batch runner")
     parser.add_argument("--report", type=Path, required=False)
     parser.add_argument("--device", type=str, required=False)
-    parser.add_argument("--recording", nargs="?", default=False, const=True, required=False)
+    parser.add_argument(
+        "--recording", nargs="?", default=False, const=True, required=False
+    )
 
     args, argsv = parser.parse_known_args(argv)
 
     air_names = _collect_air_paths(list(argsv))
     if not air_names:
-        raise ValueError("No .air file specified. Pass one or more .air paths as arguments.")
+        raise ValueError(
+            "No .air file specified. Pass one or more .air paths as arguments."
+        )
 
     current_dir = Path(__file__).resolve().parent
 
@@ -215,39 +227,55 @@ def main(argv: list[str] | None = None) -> int:
             mt_wrapper.start()
             print(f"Minitouch daemon started for {device_id}")
 
-            def airtest_touch(pos, **kwargs):
+            def airtest_touch(pos, kwargs):
                 if isinstance(pos, (list, tuple)) and len(pos) >= 2:
                     x, y = int(pos[0]), int(pos[1])
                 else:
-                    x, y = int(pos), kwargs.get('y', 0)
+                    x, y = int(pos), kwargs.get("y", 0)
                 mt_wrapper.touch(x, y)
                 return pos
 
             def airtest_swipe(p1, p2=None, **kwargs):
                 if p2 is None:
-                    print("Warning: swipe with vector not fully supported by airtouch-fast")
+                    print(
+                        "Warning: swipe with vector not fully supported by airtouch-fast"
+                    )
                     return
-                start = (int(p1[0]), int(p1[1])) if isinstance(p1, (list, tuple)) else (0, 0)
-                end = (int(p2[0]), int(p2[1])) if isinstance(p2, (list, tuple)) else (0, 0)
-                duration = kwargs.get('duration', 0.5)
+                start = (
+                    (int(p1[0]), int(p1[1]))
+                    if isinstance(p1, (list, tuple))
+                    else (0, 0)
+                )
+                end = (
+                    (int(p2[0]), int(p2[1]))
+                    if isinstance(p2, (list, tuple))
+                    else (0, 0)
+                )
+                duration = kwargs.get("duration", 0.5)
                 mt_wrapper.swipe(start, end, duration=duration)
                 return p2
 
             if G.DEVICE:
                 G.DEVICE.touch = airtest_touch
                 G.DEVICE.swipe = airtest_swipe
-                print("Airtest touch/swipe methods replaced with airtouch-fast (wrapper applied).")
+                print(
+                    "Airtest touch/swipe methods replaced with airtouch-fast (wrapper applied)."
+                )
 
         except Exception as e:
             print(f"Warning: MinitouchWrapper failed: {e}")
 
-    report_root = Path(args.report).resolve() if args.report else (Path.cwd().resolve() / "reports")
+    report_root = (
+        Path(args.report).resolve()
+        if args.report
+        else (Path.cwd().resolve() / "reports")
+    )
     report_root.mkdir(parents=True, exist_ok=True)
 
     results: list[tuple[str, bool]] = []
     for air_name in air_names:
         test_name = Path(air_name).stem
-        print(f"\n{'='*60}\n  Running: {test_name}\n{'='*60}")
+        print(f"\n{'=' * 60}\n  Running: {test_name}\n{'=' * 60}")
 
         passed = run_one(air_name, report_root, device_id, args.recording, current_dir)
         results.append((test_name, passed))
@@ -266,10 +294,10 @@ def main(argv: list[str] | None = None) -> int:
     passed_cnt = sum(1 for _, ok in results if ok)
     failed = total - passed_cnt
 
-    print(f"\n{'='*60}\n  TEST SUMMARY  ({passed_cnt}/{total} passed)\n{'='*60}")
+    print(f"\n{'=' * 60}\n  TEST SUMMARY  ({passed_cnt}/{total} passed)\n{'=' * 60}")
     for name, ok in results:
         print(f"  {'PASS' if ok else 'FAIL'}  {name}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     return failed
 
