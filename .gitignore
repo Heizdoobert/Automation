@@ -48,3 +48,4 @@ openclaw_agent.py
 .openclaw/
 bug_correlator.py
 .roo/
+agent/

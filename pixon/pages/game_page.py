@@ -40,9 +40,6 @@ class GamePage(BasePage):
         return (0, 0, w, int(120 * h / 1280))
 
     def get_current_level(self) -> int:
-        home_page = HomePage()
-        home_page.click_play()
-
         @wrapper.retry(times=3, delay=1.0, exceptions=(Exception,))
         def _attempt():
             screen = wrapper.get_screen()

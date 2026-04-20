@@ -43,6 +43,30 @@ def logwrap(func):
 
 _ocr = None
 _ocr_import_error = None
+_error_logged = False
+
+
+def reset_error_state() -> None:
+    global _error_logged
+    _error_logged = False
+
+
+def has_error_state() -> bool:
+    return _error_logged
+
+
+def _is_fatal_error_message(msg: str) -> bool:
+    lower_msg = str(msg).lower()
+    fatal_markers = (
+        " failed",
+        "traceback",
+        "assertionerror",
+        "test failed",
+        "tc",
+    )
+    if "fail to touch" in lower_msg:
+        return False
+    return any(marker in lower_msg for marker in fatal_markers)
 
 
 def _get_ocr():
@@ -365,6 +389,9 @@ def log_info(msg, snapshot=True):
 
 
 def log_error(msg, snapshot=True):
+    global _error_logged
+    if _is_fatal_error_message(msg):
+        _error_logged = True
     log(RuntimeError(msg), snapshot=snapshot)
 
 
@@ -407,3 +434,7 @@ def teststep(f):
         return res
 
     return wrapper
+
+
+# Prevent pytest from collecting this helper as a test function.
+teststep.__test__ = False

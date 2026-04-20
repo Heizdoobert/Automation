@@ -56,10 +56,7 @@ else:
     except Exception as e:
         print(f"Failed to connect device {args.device}: {e}")
         sys.exit(1)
-    # print("No device specified, exiting.")
-    # sys.exit(1)
 
-# set up report path
 log_dir = air_path / "log"
 shutil.rmtree(log_dir, ignore_errors=True)
 set_logdir(log_dir)
@@ -70,7 +67,7 @@ if args.report:
 # set up recording
 recorder = None
 if args.recording:
-    file_name = f'{device_id}_record_{datetime.now().strftime("%Y%m%d_%H%M%S")}.mp4'
+    file_name = f"{device_id}_record_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
     if os.path.isdir(args.recording) or os.path.isfile(args.recording):
         recording_path: Path = Path(args.recording).resolve()
         if recording_path.is_dir():

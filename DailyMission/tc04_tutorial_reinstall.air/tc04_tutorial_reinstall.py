@@ -3,6 +3,7 @@
 import sys
 import traceback
 from pathlib import Path
+from time import sleep
 
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -46,9 +47,14 @@ def main():
         daily.complete_tutorial_from_popup()
         wrapper.log_info("Step 3 PASSED: tutorial completed")
 
-        assert daily.verify_daily_mission_icon_on_home(), \
+        sleep(3)
+        assert daily.verify_daily_mission_icon_on_home(timeout=25), \
             "TC04 FAIL Step 4: Daily Mission icon not visible after tutorial"
         wrapper.log_info("Step 4 PASSED: icon visible on Main")
+
+        assert not daily.is_notify_visible(timeout=3), \
+            "TC04 FAIL Step 5: notify still visible after tutorial"
+        wrapper.log_info("Step 5 PASSED: notify hidden after tutorial")
 
         wrapper.log_info("=== TC04 PASSED ===")
 

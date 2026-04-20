@@ -8,12 +8,17 @@ if str(project_root) not in sys.path:
 
 from airtest.core.api import *
 import pixon.pixonwrapper as wrapper
+from pixon.common.test_flow import run_step, log_step
 from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.setting_page import SettingPage
-from DailyMission.conftest_daily import reset_progress, teardown_app, open_app_with_fake_ads
+from DailyMission.conftest_daily import (
+    reset_progress,
+    teardown_app,
+    open_app_with_fake_ads,
+)
 
 auto_setup(__file__)
 
@@ -27,18 +32,21 @@ setting = SettingPage()
 
 def main():
     try:
-        open_app_with_fake_ads(home_page)
+        run_step("tc05 open app with fake ads", open_app_with_fake_ads, home_page)
         wrapper.log_info("=== TC05: Check notify on icon before joining ===")
-        reset_progress(home_page, cheat, setting, game, target_level=11)
+        run_step(
+            "tc05 reset progress to level 11",
+            reset_progress,
+            home_page,
+            cheat,
+            setting,
+            game,
+            11,
+        )
+        log_step("tc05 verify notify appears before joining")
         if not daily.is_notify_visible():
             raise AssertionError("Notify not visible on icon")
         wrapper.log_info("PASS: Notify visible")
-        daily.open_daily_mission_popup()
-        sleep(2)
-        daily.complete_tutorial_from_popup()
-        if daily.is_notify_visible():
-            raise AssertionError("Notify still visible after joining")
-        wrapper.log_info("PASS: Notify gone after join")
         wrapper.log_info("=== TC05 PASSED ===")
     except Exception as e:
         wrapper.log_error(f"TC05 failed: {str(e)}\n{traceback.format_exc()}")

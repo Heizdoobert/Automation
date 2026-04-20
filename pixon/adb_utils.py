@@ -220,6 +220,18 @@ def run_adb_command(cmd: list, timeout: int = 30) -> tuple:
         return -1, "", str(e)
 
 
+def clear_app_data() -> bool:
+    """Clear app data with pm clear to avoid UI-dependent reset flows."""
+    code, stdout, stderr = run_adb_command(["shell", "pm", "clear", PACKAGE], timeout=30)
+    if code != 0:
+        wrapper.log_error(
+            f"clear_app_data failed with code {code}: {stderr.strip() if stderr else stdout.strip()}"
+        )
+        return False
+    wrapper.log_info(f"Cleared app data for {PACKAGE}")
+    return True
+
+
 def stop_adb_server() -> bool:
     """
     Kill ADB server

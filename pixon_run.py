@@ -58,6 +58,7 @@ def run_one(
     test_report_dir.mkdir(parents=True, exist_ok=True)
 
     auto_setup(str(air_py))
+    reset_error_state()
 
     recorder = None
     recording_path: Path | None = None
@@ -98,6 +99,11 @@ def run_one(
             test_passed = False
         else:
             test_module.main()
+            if has_error_state():
+                print(
+                    f"  [ERROR] {air_path.stem}: test script logged runtime errors"
+                )
+                test_passed = False
 
     except Exception as e:
         print(f"  [ERROR] {air_path.stem}: {e}")
@@ -105,13 +111,28 @@ def run_one(
 
     finally:
         print(f"  Exporting report -> {test_report_dir}")
+        report_generated = False
         try:
             from airtest.report.report import LogToHtml
 
             script_root_str = str(air_py) if not isinstance(air_py, str) else air_py
             LogToHtml(script_root=str(air_py), export_dir=str(test_report_dir)).report()
+            report_generated = True
         except Exception as e:
             print(f"  [WARN] Failed to export report: {e}")
+
+        if not report_generated:
+            fallback_report = test_report_dir / "log.html"
+            fallback_report.write_text(
+                (
+                    "<html><body>"
+                    f"<h2>Report export failed for {air_path.stem}</h2>"
+                    "<p>Airtest LogToHtml failed. Check console output and raw log dir.</p>"
+                    f"<p>Raw log dir: {log_dir}</p>"
+                    "</body></html>"
+                ),
+                encoding="utf-8",
+            )
 
         if recorder:
             recorder.stop()

@@ -2,6 +2,7 @@
 import sys
 import traceback
 from pathlib import Path
+from time import sleep
 
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -42,12 +43,26 @@ def main():
         _enter_game_and_get_level(home_page, game)
         go_home_clean(home_page)
 
-        wrapper.log_info("Completing Daily Mission tutorial...")
-        daily.complete_daily_mission_tutorial()
+        assert daily.is_notify_visible(timeout=5), \
+            "TC03 FAIL: notify not visible after unlock"
+        wrapper.log_info("Notify visible after unlock")
 
-        assert daily.verify_daily_mission_icon_on_home(), \
+        assert daily.open_daily_mission_popup(), \
+            "TC03 FAIL: cannot open Daily Mission popup"
+        wrapper.log_info("Daily Mission popup opened")
+
+        daily.complete_tutorial_from_popup()
+        wrapper.log_info("Daily Mission tutorial completed from popup")
+
+        # Wait for home UI to refresh after tutorial
+        sleep(3)
+        assert daily.verify_daily_mission_icon_on_home(timeout=25), \
             "TC03 FAIL: Daily Mission icon not visible after tutorial"
         wrapper.log_info("Daily Mission icon visible on Main")
+
+        assert not daily.is_notify_visible(timeout=3), \
+            "TC03 FAIL: notify still visible after tutorial"
+        wrapper.log_info("Notify hidden after tutorial")
 
         wrapper.log_info("=== TC03 PASSED ===")
 

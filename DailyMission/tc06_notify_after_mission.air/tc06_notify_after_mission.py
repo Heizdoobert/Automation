@@ -8,6 +8,7 @@ if str(project_root) not in sys.path:
 
 from airtest.core.api import *
 import pixon.pixonwrapper as wrapper
+from pixon.common.test_flow import run_step, log_step
 from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.game_page import GamePage
@@ -31,21 +32,40 @@ lucky = LuckySpinPage()
 
 def main():
     try:
-        open_app_with_fake_ads(home_page)
+        run_step("tc06 open app with fake ads", open_app_with_fake_ads, home_page)
         wrapper.log_info("=== TC06: Notify after completing mission but not claiming ===")
-        setup_unlocked_daily_mission(home_page, cheat, game, target_level=11)
-        daily.open_daily_mission_popup()
-        execute_mission_action(game, cheat, daily, home_page,lucky , "complete_levels", 3)
+        run_step(
+            "tc06 setup unlocked daily mission",
+            setup_unlocked_daily_mission,
+            home_page,
+            cheat,
+            game,
+            11,
+        )
+        run_step("tc06 open daily mission popup", daily.open_daily_mission_popup)
+        run_step(
+            "tc06 execute complete_levels mission",
+            execute_mission_action,
+            game,
+            cheat,
+            daily,
+            home_page,
+            lucky,
+            "complete_levels",
+            3,
+        )
         sleep(2)
-        go_home_clean(home_page)
-        if not daily.is_notify_visible():
+        run_step("tc06 return home for notify check", go_home_clean, home_page)
+        log_step("tc06 verify notify appears after mission completion")
+        if not daily.is_notify_visible(timeout=8):
             raise AssertionError("Notify not visible after completing mission")
         wrapper.log_info("PASS: Notify visible")
-        daily.open_daily_mission_popup()
-        daily.claim_mission(0)
+        run_step("tc06 re-open daily mission popup", daily.open_daily_mission_popup)
+        run_step("tc06 claim first mission", daily.claim_mission, 0)
         sleep(1)
-        home_page.go_home(force=True)
-        if daily.is_notify_visible():
+        run_step("tc06 return home after claim", home_page.go_home, True)
+        log_step("tc06 verify notify disappears after claim")
+        if daily.is_notify_visible(timeout=5):
             raise AssertionError("Notify still visible after claiming")
         wrapper.log_info("PASS: Notify gone after claim")
         wrapper.log_info("=== TC06 PASSED ===")

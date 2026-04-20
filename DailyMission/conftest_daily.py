@@ -1,9 +1,11 @@
 # conftest_daily.py
+import os
 import time
 import random
 from datetime import datetime, timedelta
 from airtest.core.api import exists, sleep, stop_app
 import pixon.pixonwrapper as wrapper
+from pixon.common.test_flow import ensure_home, log_step, run_step
 from pixon.pages.home_page import HomePage
 from pixon.pages.cheat_page import CheatPage
 from pixon.pages.setting_page import SettingPage
@@ -11,6 +13,7 @@ from pixon.pages.game_page import GamePage
 from pixon.pages.daily_mission import DailyMissionPage
 from pixon.pages.lucky_spin import LuckySpinPage
 from pixon.adb_utils import (
+    clear_app_data,
     cold_start_with_combined,
     set_autoplay,
     set_param,
@@ -19,7 +22,7 @@ from pixon.adb_utils import (
     set_system_time,
 )
 
-package_name = "com.woodpuzzle.pin3d"
+package_name = os.getenv("GAME_PACKAGE", "com.woodpuzzle.pin3d")
 DEFAULT_TARGET_LEVEL = 11
 DEFAULT_PRE_LEVEL_MIN = 7
 DEFAULT_PRE_LEVEL_MAX = 8
@@ -28,23 +31,38 @@ LEVEL_WAIT_TIMEOUT = 300
 
 
 # ==================== UI HELPERS ====================
+def get_default_start_profile() -> dict:
+    """Return a reusable default app-start profile that can be overridden by env vars."""
+    return {
+        "fakeads": True,
+        "heart": int(os.getenv("GAME_START_HEART", "5")),
+        "level": int(os.getenv("GAME_START_LEVEL", "3")),
+        "booster": {
+            "drill": int(os.getenv("GAME_START_DRILL", "20")),
+            "hammer": int(os.getenv("GAME_START_HAMMER", "20")),
+            "magnet": int(os.getenv("GAME_START_MAGNET", "20")),
+        },
+        "coin": int(os.getenv("GAME_START_COIN", "5000")),
+    }
+
+
+def open_app_with_profile(home: HomePage, profile: dict, wait_seconds: int = 30) -> None:
+    """Open app with a provided profile payload for reusable test setup across suites."""
+    run_step("cold start app with profile payload", cold_start_with_combined, **profile)
+    wrapper.log_info(f"Applied start profile: {profile}")
+    sleep(wait_seconds)
+    run_step("close startup popups", close_all_popups, home)
+
+
 def open_app_with_fake_ads(home: HomePage) -> None:
     """Setup app with fake ads on.
 
     Args:
         home (HomePage): Checking home
     """
-    cold_start_with_combined(
-        fakeads=True,
-        heart=5,
-        level=3,
-        booster={"drill": 20, "hammer": 20, "magnet": 20},
-        coin=5000,
-    )
-    wrapper.log_info("Started app with fake ads, level 3, 5 hearts, boosters and coins")
-    sleep(30)
-    wrapper.log_info("Closing popups after starting app")
-    close_all_popups(home)
+    profile = get_default_start_profile()
+    wrapper.log_info("Using default start profile for fake-ads setup")
+    open_app_with_profile(home, profile=profile, wait_seconds=30)
     wrapper.log_info("Finished setup with fake ads")
 
 
@@ -55,6 +73,7 @@ def close_all_popups(home: HomePage, repeat: int = 5) -> None:
         home (HomePage): HomePage instance to check for popups
         repeat (int, optional): Number of times to repeat checking for popups. Defaults to 5.
     """
+    log_step(f"close_all_popups scan start (repeat={repeat})")
     closed = 0
     for _ in range(repeat):
         if exists(home.btn_close):
@@ -65,21 +84,24 @@ def close_all_popups(home: HomePage, repeat: int = 5) -> None:
             break
     if closed:
         wrapper.log_info(f"Closed {closed} popup(s)")
+    else:
+        wrapper.log_info("No popup to close")
 
 
 def go_home_clean(home: HomePage, retries: int = 3) -> None:
-    close_all_popups(home)
-    if home.is_at_home():
-        close_all_popups(home)
-        return
-    for attempt in range(retries):
-        if home.go_home(force=False):
-            sleep(1)
-            close_all_popups(home)
-            if home.is_at_home():
-                return
-        wrapper.log_warning(f"go_home_clean attempt {attempt + 1} failed")
-    raise AssertionError("Not at home after navigation")
+    try:
+        run_step("ensure app is at home", ensure_home, home, close_all_popups, retries, 1)
+    except AssertionError:
+        has_close = bool(exists(home.btn_close))
+        has_setting = bool(exists(home.btn_setting))
+        has_home = bool(exists(home.btn_home))
+        has_main_home = bool(exists(home.main_home_btn))
+        has_main_play = bool(exists(home.main_play_btn))
+        raise AssertionError(
+            "Not at home after navigation "
+            f"(close={has_close}, setting={has_setting}, home={has_home}, "
+            f"main_home={has_main_home}, main_play={has_main_play})"
+        )
 
 
 # ==================== GAME & LEVEL HELPERS ====================
@@ -99,6 +121,24 @@ def _enter_game_and_get_level(home: HomePage, game: GamePage) -> int:
         home.click_play()
         wrapper.log_info("Clicked play, waiting for game to load")
         sleep(3)
+
+    for attempt in range(3):
+        try:
+            return game.get_current_level()
+        except RuntimeError as exc:
+            wrapper.log_warning(
+                f"get_current_level failed on attempt {attempt + 1}/3: {exc}"
+            )
+            if attempt == 0:
+                wrapper.log_info("Retrying enter-game flow by normalizing back to home")
+                try:
+                    home.go_home(force=True)
+                    sleep(2)
+                    home.click_play()
+                except Exception as play_exc:
+                    wrapper.log_warning(f"Retry enter-game flow failed: {play_exc}")
+            sleep(2)
+
     return game.get_current_level()
 
 
@@ -186,19 +226,25 @@ def _advance_levels(
 def _set_level_and_win(
     cheat: CheatPage, home: HomePage, game: GamePage, level: int
 ) -> None:
-    """Set the level and win it to return to home.
+    """Set the level, with optional win step to return to home.
 
     Args:
         cheat (CheatPage): CheatPage instance to open cheat and win the level
         home (HomePage): HomePage instance to start the game
-        level (int): The level to set and win
+        level (int): The level to set. For level 3, win step is skipped due to gameplay bug.
     """
-    home.click_play()
-    _autoplay_to_level(game, 3)
-    set_param("level", level)
+    run_step("enter level by clicking play", home.click_play)
+    run_step("autoplay to base level 3", _autoplay_to_level, game, 3)
+    run_step(f"set level to {level}", set_param, "level", level)
     sleep(3)
-    cheat.open_cheat()
-    cheat.win_level_and_continue()
+    if level == 3:
+        wrapper.log_warning(
+            "Skip win_level at level 3 due to known gameplay bug; keep flow in-game"
+        )
+        return
+
+    run_step("open cheat menu", cheat.open_cheat)
+    run_step("win current level and continue", cheat.win_level_and_continue)
     sleep(3)
     wrapper.log_info(f"Set level to {level} and won the level to return home")
 
@@ -209,37 +255,21 @@ def setup_fresh_install(
     game: GamePage,
     setting: SettingPage,
 ) -> None:
-    """Set up a fresh install of the game.
+    """Set up a fresh install state by clearing app data and returning home.
 
     Args:
         home (HomePage): HomePage instance for navigation
-        cheat (CheatPage): CheatPage instance for cheating
         game (GamePage): GamePage instance for game actions
-        setting (SettingPage): SettingPage instance for settings
+        setting (SettingPage): Kept for compatibility with existing callers.
     """
-    go_home_clean(home)
-    wrapper.log_info("Deleting progress for fresh install setup")
-    setting.delete_progress()
-    wrapper.log_info("Waiting for progress deletion to take effect")
-    sleep(20)
-    _wait_for_splash_and_enter_game(home, game)
-    wrapper.log_info(
-        "Setting level to 3 and winning to return home for fresh install setup"
-    )
-    _autoplay_to_level(game, 3)
-    wrapper.log_info(
-        "Reached level 3, now setting to default target level for fresh install setup"
-    )
-    sleep(1)
-    set_param("level", DEFAULT_TARGET_LEVEL)
-    wrapper.log_info(f"Set level to {DEFAULT_TARGET_LEVEL} for fresh install setup")
-    sleep(2)
-    game.activate_boosters()
-    wrapper.log_info("Activated boosters for fresh install setup")
-    go_home_clean(home)
-    wrapper.log_info(
-        "Finished fresh install setup, now at home with default target level and boosters activated"
-    )
+    run_step("navigate to home before fresh install reset", go_home_clean, home)
+    wrapper.log_info("Clearing app data for fresh install setup")
+    if not clear_app_data():
+        raise AssertionError("setup_fresh_install: clear_app_data failed")
+    sleep(10)
+    run_step("restart app with fake ads after clear", open_app_with_fake_ads, home)
+    run_step("return to home after setup", go_home_clean, home)
+    wrapper.log_info("Finished fresh install setup, now at home with cleared progress")
 
 
 def reset_progress(
@@ -259,16 +289,16 @@ def reset_progress(
         target_level (int, optional): The target level to set after reset. Defaults to DEFAULT_TARGET_LEVEL.
         wait (int, optional): Time in seconds to wait after deleting progress. Defaults to 15.
     """
-    go_home_clean(home)
+    run_step("navigate to home before reset", go_home_clean, home)
     wrapper.log_info("Deleting progress for reset setup")
-    setting.delete_progress()
+    run_step("delete progress", setting.delete_progress)
     wrapper.log_info("Waiting for progress deletion to take effect for reset setup")
     sleep(20)
-    _set_level_and_win(cheat, home, game, 3)
-    wrapper.log_info("Set level to 3 and won to return home for reset setup")
-    set_param("level", target_level)
+    run_step("set base level 3 setup", _set_level_and_win, cheat, home, game, 3)
+    wrapper.log_info("Completed base level-3 setup for reset flow")
+    run_step(f"set target level {target_level}", set_param, "level", target_level)
     wrapper.log_info(f"Set level to {target_level} for reset setup")
-    go_home_clean(home)
+    run_step("return to home after reset", go_home_clean, home)
 
 
 def cold_start_unlock_daily_mission(
@@ -283,11 +313,16 @@ def cold_start_unlock_daily_mission(
         setting (SettingPage): SettingPage instance for settings
         game (GamePage): GamePage instance for game actions
     """
-    go_home_clean(home)
-    setting.delete_progress()
+    run_step("navigate to home before cold unlock", go_home_clean, home)
+    run_step("delete progress", setting.delete_progress)
     sleep(20)
-    _wait_for_splash_and_enter_game(home, game)
-    cold_start_with_param("level", DEFAULT_TARGET_LEVEL)
+    run_step("wait splash and enter game", _wait_for_splash_and_enter_game, home, game)
+    run_step(
+        f"cold start with level {DEFAULT_TARGET_LEVEL}",
+        cold_start_with_param,
+        "level",
+        DEFAULT_TARGET_LEVEL,
+    )
     wrapper.log_info(
         f"Cold started with level {DEFAULT_TARGET_LEVEL} to unlock daily mission"
     )
@@ -307,16 +342,24 @@ def setup_unlocked_daily_mission(
         game (GamePage): GamePage instance for game actions
         target_level (int, optional): The target level to reach. Defaults to DEFAULT_TARGET_LEVEL.
     """
-    current_lv = _enter_game_and_get_level(home, game)
+    current_lv = run_step("read current level", _enter_game_and_get_level, home, game)
     if current_lv < target_level:
-        _set_level_and_win(cheat, home, game, target_level)
-        home.click_btn_next()
-    go_home_clean(home)
+        run_step(
+            f"set and win to target level {target_level}",
+            _set_level_and_win,
+            cheat,
+            home,
+            game,
+            target_level,
+        )
+        run_step("click next after unlock flow", home.click_btn_next)
+    run_step("return to home after unlock", go_home_clean, home)
 
 
 def teardown_app() -> None:
     """Stop the app."""
     wrapper.log_info("Stopping the app for teardown")
+    wrapper.log_info(f"Teardown package: {package_name}")
     stop_app(package_name)
 
 
@@ -342,9 +385,11 @@ def execute_mission_action(
         mission_type (str): The type of mission to execute
         value (int): The value associated with the mission (e.g., number of levels, coins, etc.)
     """
-    daily.take_mission()
+    log_step(f"execute_mission_action: type={mission_type}, value={value}")
+    run_step("take mission", daily.take_mission)
     if mission_type == "complete_levels":
         target_level = game.get_current_level() + value
+        log_step(f"complete_levels target={target_level}")
         _advance_levels(cheat, game, home_page, daily, target_level)
         go_home_clean(home_page)
     elif mission_type in (
@@ -356,41 +401,51 @@ def execute_mission_action(
         booster_name = mission_type.replace("use_booster_", "")
         if booster_name == "use_booster":
             booster_name = random.choice(["drill", "hammer", "magnet"])
-        set_param("booster", {booster_name: value + 10})
+        run_step(
+            f"set booster inventory for {booster_name}",
+            set_param,
+            "booster",
+            {booster_name: value + 10},
+        )
         sleep(1)
-        game.use_booster(booster_name, value)
+        run_step(f"use booster {booster_name} x{value}", game.use_booster, booster_name, value)
         go_home_clean(home_page)
     elif mission_type == "spend_coins":
-        set_param("coin", value + 1000)
+        run_step("set coin amount for spend mission", set_param, "coin", value + 1000)
         sleep(1)
-        game.spend_coins(value)
+        run_step(f"spend coins amount={value}", game.spend_coins, value)
     elif mission_type == "level_run":
-        home_page.click_play()
-        game.get_current_level()
+        run_step("enter game", home_page.click_play)
+        run_step("read current level", game.get_current_level)
         _autoplay_to_level(game, game.get_current_level() + (value + 5))
         go_home_clean(home_page)
     elif mission_type == "collect_nails_red":
-        home_page.click_play()
-        set_param("level", game.get_current_level())
+        run_step("enter game", home_page.click_play)
+        run_step("sync level param", set_param, "level", game.get_current_level())
         _autoplay_to_level(game, game.get_current_level() + 10)
         go_home_clean(home_page)
     elif mission_type == "collect_nails_blue":
-        set_param("level", game.get_current_level() + (value // 10))
+        run_step(
+            "set level for collect_nails_blue",
+            set_param,
+            "level",
+            game.get_current_level() + (value // 10),
+        )
         _autoplay_to_level(game, game.get_current_level() + (value // 10))
         go_home_clean(home_page)
     elif mission_type == "lucky_spin":
-        lucky_spin.roll_out()
+        run_step("run lucky spin", lucky_spin.roll_out)
     elif mission_type == "watch_ads":
-        pass
+        log_step("watch_ads mission: placeholder (no action yet)")
     elif mission_type == "play_minutes":
-        pass
+        log_step("play_minutes mission: placeholder (no action yet)")
     elif mission_type == "complete_levels_kill":
         target_level = game.get_current_level() + value
         _autoplay_to_level(game, target_level)
-        teardown_app()
-        cold_start_with_json({"fakeads": True})
+        run_step("teardown app", teardown_app)
+        run_step("cold start app after kill mission", cold_start_with_json, {"fakeads": True})
         sleep(20)
-        close_all_popups(home_page)
+        run_step("close popups after restart", close_all_popups, home_page)
     else:
         wrapper.log_warning(f"Unknown mission type: {mission_type}")
 

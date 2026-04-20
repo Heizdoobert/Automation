@@ -5,6 +5,7 @@ from airtest.core.api import sleep
 from airtest.aircv import crop_image
 import pixon.pixonwrapper as wrapper
 import re
+import time
 
 
 class DailyMissionPage(BasePage):
@@ -12,6 +13,7 @@ class DailyMissionPage(BasePage):
     tap_to_continue          = get_template("tap_to_continue.png",                     (-0.004,  0.55 ))
     btn_close                = get_template("system_function/btn_close.png",           ( 0.365, -0.858))
     btn_daily_mission_notify = get_template("home_page/btn_daily_mission_notify.png", (-0.396, -0.543))
+    mission_list_panel       = get_template("home_page/mission_list_panel.png",       (-0.394, -0.544))
     btn_play_daily           = get_template("daily_mission/btn_play_daily.png",        ( 0.261, -0.233))
     btn_collect              = get_template("daily_mission/btn_collect.png",           (0.261, 0.113))
     exp_milestone_boxes = [
@@ -30,12 +32,12 @@ class DailyMissionPage(BasePage):
         sleep(1)
         return bool(self.wait_for_element(self.btn_daily_mission, timeout=2))
 
-    def is_notify_visible(self) -> bool:
-        return bool(self.wait_for_element(self.btn_daily_mission_notify, timeout=2))
+    def is_notify_visible(self, timeout: int = 2) -> bool:
+        return bool(self.wait_for_element(self.btn_daily_mission_notify, timeout=timeout))
 
     def open_daily_mission_popup(self) -> bool:
         if not self.wait_for_element(self.btn_daily_mission, timeout=5):
-            wrapper.log_error("Daily Mission icon not found on home screen")
+            wrapper.log_warning("Daily Mission icon not found on home screen")
             return False
         self.tap(self.btn_daily_mission)
         sleep(2)
@@ -43,23 +45,74 @@ class DailyMissionPage(BasePage):
             self.tap(self.tap_to_continue)
         return True
 
-    def verify_daily_mission_icon_on_home(self) -> bool:
+    def wait_notify_state(self, visible: bool, timeout: int = 10, interval: float = 1.0) -> bool:
+        """Wait until notify icon reaches expected visible state."""
+        end_at = time.time() + timeout
+        while time.time() < end_at:
+            is_visible = self.is_notify_visible(timeout=1)
+            if is_visible == visible:
+                return True
+            sleep(interval)
+        return False
+
+    def wait_mission_list_loaded(self, timeout: int = 15) -> bool:
+        """Wait until mission list is loaded (after join), verified by btn_play_daily or btn_collect."""
+        end_at = time.time() + timeout
+        while time.time() < end_at:
+            mission_count = self.get_mission_count()
+            if mission_count > 0:
+                wrapper.log_info(f"Mission list loaded: {mission_count} mission(s) visible")
+                return True
+            collect_count = self.get_collect_mission_count()
+            if collect_count > 0:
+                wrapper.log_info(f"Mission list loaded: {collect_count} mission(s) ready to claim")
+                return True
+            sleep(1)
+        wrapper.log_warning("Mission list not loaded within timeout")
+        return False
+
+    def verify_daily_mission_icon_on_home(self, timeout: int = 15) -> bool:
         home = HomePage()
         home.go_home(force=True)
-        sleep(2)
-        return bool(self.wait_for_element(self.btn_daily_mission, timeout=5))
+
+        end_at = time.time() + timeout
+        while time.time() < end_at:
+            has_icon = bool(self.wait_for_element(self.btn_daily_mission, timeout=1))
+            has_notify_icon = bool(self.wait_for_element(self.btn_daily_mission_notify, timeout=1))
+            has_panel = bool(self.wait_for_element(self.mission_list_panel, timeout=1))
+
+            if has_icon or has_notify_icon or has_panel:
+                return True
+
+            # Try one lightweight normalization pass if UI is still transitioning.
+            if self.wait_for_element(self.btn_close, timeout=1):
+                self.tap(self.btn_close)
+            sleep(1)
+
+        wrapper.log_warning(
+            "verify_daily_mission_icon_on_home: no Daily Mission icon variant found "
+            "(icon/notify/panel)"
+        )
+        return False
 
     def complete_tutorial_from_popup(self) -> None:
-        if self.wait_for_element(self.tap_to_continue, timeout=10):
+        tapped_continue = False
+        for _ in range(3):
+            if not self.wait_for_element(self.tap_to_continue, timeout=4):
+                break
             self.tap(self.tap_to_continue)
-            sleep(3)
-            if not self.wait_for_element(self.btn_collect, timeout=5):
-                wrapper.log_warning("complete_tutorial_from_popup: btn_collect not visible after tap_to_continue")
-            else:
-                wrapper.log_info("Mission list visible after tap_to_continue")
-        else:
+            tapped_continue = True
+            sleep(2)
+            if self.wait_for_element(self.btn_collect, timeout=2) or self.wait_for_element(self.btn_play_daily, timeout=2):
+                break
+
+        if not tapped_continue:
             wrapper.log_info("tap_to_continue not found — tutorial may have auto-dismissed")
-        if self.wait_for_element(self.btn_close, timeout=5):
+
+        if not self.wait_mission_list_loaded(timeout=10):
+            wrapper.log_warning("complete_tutorial_from_popup: mission list not confirmed before close")
+
+        if self.wait_for_element(self.btn_close, timeout=8):
             self.tap(self.btn_close)
             sleep(2)
         else:
