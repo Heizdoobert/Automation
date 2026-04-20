@@ -42,7 +42,7 @@ memory/
 knowledge/
 identity/
 environment/
-agents/
+agent/
 DailyMission.xlsx
 openclaw_agent.py
 .openclaw/
